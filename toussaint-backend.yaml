@@ -1,0 +1,156 @@
+swagger: "2.0"
+info:
+  description: "API for Toussaint backend. Used for subscribing to games"
+  version: "0.0.1"
+  title: "Toussaint backend"
+  contact:
+    email: "wuzzapcom@gmail.com"
+  license:
+    name: "Apache 2.0"
+    url: "http://www.apache.org/licenses/LICENSE-2.0.html"
+schemes:
+  - "http"
+paths:
+  /game:
+    get:
+      description: "Find games in PSN by name"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "name"
+          in: "query"
+          description: "name of searching game"
+          required: true
+          type: "string"
+      responses:
+        405:
+          description: "Invalid input"
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Game"
+  /notify:
+    put:
+      description: "Subscribes given client to given game price changes"
+      parameters:
+        - name: "game-id"
+          in: "query"
+          description: "id of game for notifications"
+          required: true
+          type: "string"
+        - name: "client-id"
+          in: "query"
+          description: "id of client"
+          required: true
+          type: "string"
+        - name: "client-type"
+          in: "query"
+          description: "type of client"
+          required: true
+          type: "string"
+          enum:
+            - "telegram"
+      responses:
+        200:
+          description: "successful operation"
+    delete:
+      description: "Removes subscription of given client to given game"
+      parameters:
+        - name: "game-id"
+          in: "query"
+          description: "id of game for notifications"
+          required: true
+          type: "string"
+        - name: "client-id"
+          in: "query"
+          description: "id of client"
+          required: true
+          type: "string"
+        - name: "client-type"
+          in: "query"
+          description: "type of client"
+          required: true
+          type: "string"
+          enum:
+            - "telegram"
+      responses:
+        200:
+          description: "successful deletion"
+
+  /register:
+    put:
+      description: "Registers new user"
+      parameters:
+        - name: "client-id"
+          in: "query"
+          description: ""
+          required: true
+          type: "string"
+        - name: "client-type"
+          in: "query"
+          description: "type of client"
+          required: true
+          type: "string"
+          enum:
+            - "telegram"
+      responses:
+        200:
+          description: "successful operation"
+        405:
+          description: "already registered user"
+
+  /list:
+    get:
+      description: "Generates list of games given user subscribed"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "client-id"
+          in: "query"
+          description: ""
+          required: true
+          type: "string"
+        - name: "client-type"
+          in: "query"
+          description: "type of client"
+          required: true
+          type: "string"
+          enum:
+            - "telegram"
+        - name: "request-type"
+          in: "query"
+          required: true
+          type: "string"
+          enum:
+            - "all"
+            - "sale"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Game"
+
+definitions:
+  Game:
+    type: "object"
+    required:
+      - "id"
+      - "name"
+      - "price"
+    properties:
+      id:
+        type: "string"
+      name:
+        type: "string"
+      price:
+        type: "integer"
+      isPlus:
+        type: "boolean"
+      salePrice:
+        type: "integer"
+      saleEnd:
+        type: "string"
