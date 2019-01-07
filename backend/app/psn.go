@@ -31,7 +31,7 @@ func BuildURLForName(name string) (string, error) {
 }
 
 type Game struct {
-	Id        string    `json:"-"`
+	Id        string    `json:"id"`
 	Name      string    `json:"name"`
 	Price     int       `json:"price"`
 	IsPlus    bool      `json:"is_plus"`
@@ -56,8 +56,8 @@ func takeFirstMap(m interface{}) (map[string]interface{}, error) {
 	if !ok {
 		return nil, errors.New("failed convertion to []interface{}")
 	}
-	if len(temp1) != 1 {
-		return nil, errors.New(fmt.Sprintf("size of []interface{} is %d", len(temp1)))
+	if len(temp1) == 0 {
+		return nil, errors.New("size of []interface{} is 0")
 	}
 	res, ok := temp1[0].(map[string]interface{})
 	if !ok {

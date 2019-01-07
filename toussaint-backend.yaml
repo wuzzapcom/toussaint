@@ -23,7 +23,7 @@ paths:
           required: true
           type: "string"
       responses:
-        405:
+        406:
           description: "Invalid input"
         200:
           description: "successful operation"
@@ -33,13 +33,10 @@ paths:
               $ref: "#/definitions/Game"
   /notify:
     put:
+      consumes:
+        - "application/json"
       description: "Subscribes given client to given game price changes"
       parameters:
-        - name: "game-id"
-          in: "query"
-          description: "id of game for notifications"
-          required: true
-          type: "string"
         - name: "client-id"
           in: "query"
           description: "id of client"
@@ -52,9 +49,17 @@ paths:
           type: "string"
           enum:
             - "telegram"
+        - in: "body"
+          name: game
+          description: "Game that user wants to be subscribed"
+          required: true
+          schema:
+            $ref: "#/definitions/Game"
       responses:
-        200:
-          description: "successful operation"
+        201:
+          description: "created"
+        406:
+          description: "Invalid input"
     delete:
       description: "Removes subscription of given client to given game"
       parameters:
@@ -78,6 +83,8 @@ paths:
       responses:
         200:
           description: "successful deletion"
+        406:
+          description: "Invalid input"
 
   /register:
     put:
@@ -96,10 +103,10 @@ paths:
           enum:
             - "telegram"
       responses:
-        200:
+        201:
           description: "successful operation"
-        405:
-          description: "already registered user"
+        409:
+          description: "conflict"
 
   /list:
     get:
