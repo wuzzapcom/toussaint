@@ -11,6 +11,7 @@ func removeDB(t *testing.T) {
 	if err != nil {
 		t.Log(err)
 	}
+	database = NewDatabase()
 }
 
 func TestDB(t *testing.T) {
@@ -24,19 +25,31 @@ func TestDB(t *testing.T) {
 		IsPlus: true,
 	}
 
+	err := database.AddGame(game)
+	assert.Nil(t, err)
+
 	client := &telegramClient{
 		subscriptions: []string{},
 		id:            "1",
 	}
 
-	err := database.AddUser(client)
+	err = database.AddUser(client)
 	assert.Nil(t, err)
 
 	err = database.AddGameToUser(game.Id, client.id, Telegram)
 	assert.Nil(t, err)
 
+	games, err := database.GetGamesForUser(client.id, Telegram, All)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(games))
+	assert.Equal(t, game, games[0])
+
 	err = database.DeleteGameFromUser(game.Id, client.id, Telegram)
 	assert.Nil(t, err)
+
+	games, err = database.GetGamesForUser(client.id, Telegram, All)
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(games))
 }
 
 func TestGetUsers(t *testing.T) {
@@ -64,4 +77,24 @@ func TestGetUsers(t *testing.T) {
 	assert.Equal(t, 2, len(users))
 	assert.Equal(t, "1", users[0])
 	assert.Equal(t, "2", users[1])
+}
+
+func TestGetGames(t *testing.T) {
+
+	defer removeDB(t)
+
+	game1 := Game{Id: "1"}
+	err := database.AddGame(game1)
+	assert.Nil(t, err)
+
+	game2 := Game{Id: "2"}
+	game3 := Game{Id: "3"}
+	err = database.AddGames([]Game{game2, game3})
+
+	games, err := database.GetGames()
+	assert.Nil(t, err)
+	assert.Equal(t, 3, len(games))
+	assert.Equal(t, game1, games[0])
+	assert.Equal(t, game2, games[1])
+	assert.Equal(t, game3, games[2])
 }

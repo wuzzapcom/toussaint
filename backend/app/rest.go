@@ -264,7 +264,7 @@ func SetupRestApi(host string, port int) *http.Server {
 	router.HandleFunc("/v1/game", handleGetGame).Methods("GET")
 	router.HandleFunc("/v1/register", handlePutRegister).Methods("PUT")
 	router.HandleFunc("/v1/notify", handlePutNotify).Methods("PUT")
-	router.HandleFunc("/v1/notify", handlePutNotify).Methods("DELETE")
+	router.HandleFunc("/v1/notify", handleDeleteNotify).Methods("DELETE")
 	router.HandleFunc("/v1/list", handleGetList).Methods("GET")
 	router.HandleFunc("/v1/users", handleGetUsers).Methods("GET")
 
