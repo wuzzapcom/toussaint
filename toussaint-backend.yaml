@@ -28,9 +28,8 @@ paths:
         200:
           description: "successful operation"
           schema:
-            type: "array"
             items:
-              $ref: "#/definitions/Game"
+              $ref: "#/definitions/Games"
   /notify:
     put:
       consumes:
@@ -49,12 +48,10 @@ paths:
           type: "string"
           enum:
             - "telegram"
-        - in: "body"
-          name: game
-          description: "Game that user wants to be subscribed"
+        - in: "game-id"
+          description: "game id that user wants to be subscribed"
           required: true
-          schema:
-            $ref: "#/definitions/Game"
+          type: "string"
       responses:
         201:
           description: "created"
@@ -108,6 +105,23 @@ paths:
         409:
           description: "conflict"
 
+  /users:
+    get:
+      description: "Get all users for single client-type"
+      parameters:
+        - name: "client-type"
+          in: "query"
+          description: "type of client"
+          required: true
+          type: "string"
+          enum:
+            - "telegram"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            # json Users with field Ids []string
   /list:
     get:
       description: "Generates list of games given user subscribed"
@@ -136,28 +150,18 @@ paths:
       responses:
         200:
           description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/Game"
+          type: "string"
 
 definitions:
+  Games:
+    type: "array"
   Game:
     type: "object"
     required:
       - "id"
-      - "name"
-      - "price"
+      - "description"
     properties:
       id:
         type: "string"
-      name:
-        type: "string"
-      price:
-        type: "integer"
-      isPlus:
-        type: "boolean"
-      salePrice:
-        type: "integer"
-      saleEnd:
+      description:
         type: "string"
