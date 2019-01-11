@@ -6,32 +6,30 @@ import (
 	"testing"
 )
 
-func removeDB() {
+func removeDB(t *testing.T) {
 	err := os.Remove(databaseName)
 	if err != nil {
-		panic(err)
+		t.Log(err)
 	}
 }
 
 func TestDB(t *testing.T) {
 
-	defer removeDB()
+	defer removeDB(t)
 
 	game := Game{
-		Id: "1",
-		Name: "test",
-		Price: 123,
+		Id:     "EP9000-CUSA11995_00-0000000000MSMDLX",
+		Name:   "test",
+		Price:  123,
 		IsPlus: true,
 	}
-	err := database.AddGame(game)
-	assert.Nil(t, err)
 
 	client := &telegramClient{
 		subscriptions: []string{},
-		id: "1",
+		id:            "1",
 	}
 
-	err = database.AddUser(client)
+	err := database.AddUser(client)
 	assert.Nil(t, err)
 
 	err = database.AddGameToUser(game.Id, client.id, Telegram)
@@ -39,12 +37,31 @@ func TestDB(t *testing.T) {
 
 	err = database.DeleteGameFromUser(game.Id, client.id, Telegram)
 	assert.Nil(t, err)
+}
 
-	res, err := database.GetGame(game.Id)
-	assert.Nil(t, err)
-	assert.Equal(t, game.Name, res.Name)
+func TestGetUsers(t *testing.T) {
 
-	err = database.DeleteGame(game.Id)
+	defer removeDB(t)
+
+	users, err := database.GetUsers(Telegram)
 	assert.Nil(t, err)
-	assert.Equal(t, game.Name, res.Name)
+	assert.Equal(t, 0, len(users))
+
+	err = database.AddUser(&telegramClient{
+		subscriptions: []string{},
+		id:            "1",
+	})
+	assert.Nil(t, err)
+
+	err = database.AddUser(&telegramClient{
+		subscriptions: []string{},
+		id:            "2",
+	})
+	assert.Nil(t, err)
+
+	users, err = database.GetUsers(Telegram)
+	assert.Nil(t, err)
+	assert.Equal(t, 2, len(users))
+	assert.Equal(t, "1", users[0])
+	assert.Equal(t, "2", users[1])
 }

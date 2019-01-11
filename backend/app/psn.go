@@ -30,6 +30,20 @@ func BuildURLForName(name string) (string, error) {
 	return u.String(), nil
 }
 
+func BuildURLForID(id string) (string, error) {
+	fetchSize := "99999"
+	u, err := url.Parse("https://store.playstation.com")
+	if err != nil {
+		return "", err
+	}
+	u.Path += fmt.Sprintf("/chihiro-api/viewfinder/Ru/ru/19/%s", id)
+	params := url.Values{}
+	params.Add("size", fetchSize)
+	params.Add("start", "0")
+	u.RawQuery = params.Encode()
+	return u.String(), nil
+}
+
 type Game struct {
 	Id        string    `json:"id"`
 	Name      string    `json:"name"`
@@ -66,6 +80,49 @@ func takeFirstMap(m interface{}) (map[string]interface{}, error) {
 	return res, nil
 }
 
+func parseSingleGame(game map[string]interface{}) (Game, error) {
+	currentGame := Game{}
+
+	contentType, ok := game["game_contentType"].(string)
+	if !ok {
+		return Game{}, errors.New("game_contentType is not string")
+	}
+	if !checkGameType(contentType) {
+		return Game{}, errors.New("wrong content type")
+	}
+
+	currentGame.Id = game["id"].(string)
+	currentGame.Name = game["name"].(string)
+
+	skus, err := takeFirstMap(game["skus"])
+	if err != nil {
+		return Game{}, err
+	}
+
+	price := skus["price"].(float64)
+	currentGame.Price = int(price) / 100
+
+	rewards, err := takeFirstMap(skus["rewards"])
+	if err != nil {
+		//no sale
+		return currentGame, nil
+	}
+
+	salePrice := rewards["price"].(float64)
+	currentGame.SalePrice = int(salePrice) / 100
+	isPlus := rewards["isPlus"].(bool)
+	currentGame.IsPlus = isPlus
+
+	saleEndStr := rewards["end_date"].(string)
+	saleEnd, err := time.Parse(time.RFC3339, saleEndStr)
+	if err != nil {
+		return Game{}, err
+	}
+
+	currentGame.SaleEnd = saleEnd
+	return currentGame, nil
+}
+
 func parseSearchAnswer(data []byte) ([]Game, error) {
 	var answer map[string]*json.RawMessage
 	err := json.Unmarshal(data, &answer)
@@ -93,46 +150,11 @@ func parseSearchAnswer(data []byte) ([]Game, error) {
 	resultGames := make([]Game, 0)
 
 	for _, game := range games {
-		currentGame := Game{}
 
-		contentType, ok := game["game_contentType"].(string)
-		if !ok {
+		currentGame, err := parseSingleGame(game)
+		if err != nil {
 			continue
 		}
-		if !checkGameType(contentType) {
-			continue
-		}
-
-		currentGame.Id = game["id"].(string)
-		currentGame.Name = game["name"].(string)
-
-		skus, err := takeFirstMap(game["skus"])
-		if err != nil {
-			return nil, err
-		}
-
-		price := skus["price"].(float64)
-		currentGame.Price = int(price) / 100
-
-		rewards, err := takeFirstMap(skus["rewards"])
-		if err != nil {
-			//no sale
-			resultGames = append(resultGames, currentGame)
-			continue
-		}
-
-		salePrice := rewards["price"].(float64)
-		currentGame.SalePrice = int(salePrice) / 100
-		isPlus := rewards["isPlus"].(bool)
-		currentGame.IsPlus = isPlus
-
-		saleEndStr := rewards["end_date"].(string)
-		saleEnd, err := time.Parse(time.RFC3339, saleEndStr)
-		if err != nil {
-			return nil, err
-		}
-
-		currentGame.SaleEnd = saleEnd
 
 		resultGames = append(resultGames, currentGame)
 
@@ -140,7 +162,7 @@ func parseSearchAnswer(data []byte) ([]Game, error) {
 	return resultGames, nil
 }
 
-func Search(name string) ([]Game, error) {
+func SearchByName(name string) ([]Game, error) {
 	u, err := BuildURLForName(name)
 	if err != nil {
 		return nil, err
@@ -161,4 +183,37 @@ func Search(name string) ([]Game, error) {
 	}
 
 	return parseSearchAnswer(body)
+}
+
+func parseGameDescriptionAnswer(data []byte) (Game, error) {
+	var answer map[string]interface{}
+	err := json.Unmarshal(data, &answer)
+	if err != nil {
+		return Game{}, err
+	}
+
+	return parseSingleGame(answer)
+}
+
+func SearchByID(id string) (Game, error) {
+	u, err := BuildURLForID(id)
+	if err != nil {
+		return Game{}, err
+	}
+
+	resp, err := http.Get(u)
+	if err != nil {
+		return Game{}, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return Game{}, errors.New(fmt.Sprintf("Got status code %s", resp.Status))
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return Game{}, err
+	}
+
+	return parseGameDescriptionAnswer(body)
 }

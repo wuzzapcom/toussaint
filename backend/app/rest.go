@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"time"
+	"toussaint/backend/structs"
 )
 
 var database = NewDatabase()
@@ -19,21 +19,32 @@ func handleGetGame(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	searched, err := Search(name)
+	searched, err := SearchByName(name)
 	if err != nil {
 		log.Printf("[ERR] GET /game: %+v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	games, err := json.Marshal(searched)
+	ids, msgs := DescribeGames(searched)
+
+	games := structs.GamesJSON{
+		Games: make([]structs.GamePair, len(ids)),
+	}
+
+	for i := 0; i < len(ids); i++ {
+		games.Games[i].Id = ids[i]
+		games.Games[i].Description = msgs[i]
+	}
+
+	marshalled, err := json.Marshal(games)
 	if err != nil {
 		log.Printf("[ERR] GET /game: %+v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	w.Write(games)
+	w.Write(marshalled)
 }
 
 func handlePutRegister(w http.ResponseWriter, r *http.Request) {
@@ -97,19 +108,19 @@ func handlePutNotify(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		log.Printf("[ERR] PUT /notify ioutil.ReadAll: %+v", err)
+	gameId := r.URL.Query().Get("game-id")
+	if gameId == "" {
 		w.WriteHeader(http.StatusNotAcceptable)
 		return
 	}
 
-	var game Game
-	err = json.Unmarshal(body, &game)
+	game, err := SearchByID(gameId)
 	if err != nil {
-		log.Printf("[ERR] PUT /notify json.Unmarshal: %+v", err)
-		w.WriteHeader(http.StatusNotAcceptable)
-		return
+		if err != nil {
+			log.Printf("[ERR] PUT /notify GetClientType: %+v", err)
+			w.WriteHeader(http.StatusNotAcceptable)
+			return
+		}
 	}
 
 	err = database.AddGame(game)
@@ -128,7 +139,6 @@ func handlePutNotify(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 }
-
 
 func handleDeleteNotify(w http.ResponseWriter, r *http.Request) {
 
@@ -208,30 +218,60 @@ func handleGetList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := json.Marshal(games)
-	if err != nil {
-		log.Printf("[ERR] GET /list json.Marshal: %+v", err)
+	msg := GenerateMessage(games, requestType == Sale)
+
+	w.Write([]byte(msg))
+}
+
+func handleGetUsers(w http.ResponseWriter, r *http.Request) {
+	clientTypeStr := r.URL.Query().Get("client-type")
+	if clientTypeStr == "" {
 		w.WriteHeader(http.StatusNotAcceptable)
 		return
 	}
 
-	w.Write(data)
+	clientType, err := GetClientType(clientTypeStr)
+	if err != nil {
+		log.Printf("[ERR] GET /users GetClientType: %+v", err)
+		w.WriteHeader(http.StatusNotAcceptable)
+		return
+	}
 
+	users, err := database.GetUsers(clientType)
+	if err != nil {
+		log.Printf("[ERR] GET /users database.GetUsers: %+v", err)
+		w.WriteHeader(http.StatusNotAcceptable)
+		return
+	}
+
+	usersJSON := structs.UsersJSON{
+		Ids: users,
+	}
+
+
+	marshalled, err := json.Marshal(usersJSON)
+	if err != nil {
+		log.Printf("[ERR] GET /users json.Marshal: %+v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(marshalled)
 }
-
 
 func SetupRestApi(host string, port int) *http.Server {
 	router := mux.NewRouter()
 
-	router.HandleFunc("/game", handleGetGame).Methods("GET")
-	router.HandleFunc("/register", handlePutRegister).Methods("PUT")
-	router.HandleFunc("/notify", handlePutNotify).Methods("PUT")
-	router.HandleFunc("/notify", handlePutNotify).Methods("DELETE")
-	router.HandleFunc("/list", handleGetList).Methods("GET")
+	router.HandleFunc("/v1/game", handleGetGame).Methods("GET")
+	router.HandleFunc("/v1/register", handlePutRegister).Methods("PUT")
+	router.HandleFunc("/v1/notify", handlePutNotify).Methods("PUT")
+	router.HandleFunc("/v1/notify", handlePutNotify).Methods("DELETE")
+	router.HandleFunc("/v1/list", handleGetList).Methods("GET")
+	router.HandleFunc("/v1/users", handleGetUsers).Methods("GET")
 
 	srv := &http.Server{
-		Handler:      router,
-		Addr:         fmt.Sprintf("%s:%d", host, port),
+		Handler: router,
+		Addr:    fmt.Sprintf("%s:%d", host, port),
 		// Good practice: enforce timeouts for servers you create!
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,

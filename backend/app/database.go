@@ -26,7 +26,7 @@ import (
 
 	описать в комментариях структуру базы!
 
- */
+*/
 
 type Database struct {
 	db *bolt.DB
@@ -35,7 +35,7 @@ type Database struct {
 var databaseName = "toussaint.db"
 
 const (
-	gamesBucketName = "games"
+	gamesBucketName         = "games"
 	usersTelegramBucketName = "telegram"
 )
 
@@ -49,7 +49,6 @@ func NewDatabase() *Database {
 
 	return database
 }
-
 
 func (database *Database) open() {
 	db, err := bolt.Open(databaseName, 0600, nil)
@@ -294,7 +293,12 @@ func (database *Database) DeleteGameFromUser(gameID string, clientID string, cli
 		if err != nil {
 			return err
 		}
-		storable.Subscriptions = storable.Subscriptions[:len(storable.Subscriptions) - 1]
+
+		for i, sub := range storable.Subscriptions {
+			if sub == gameID {
+				storable.Subscriptions = append(storable.Subscriptions[:i], storable.Subscriptions[i+1:]...)
+			}
+		}
 
 		buf, err := json.Marshal(storable)
 		if err != nil {
@@ -308,6 +312,24 @@ func (database *Database) DeleteGameFromUser(gameID string, clientID string, cli
 
 		return nil
 	})
+}
+
+func (database *Database) GetUsers(clientType ClientType) ([]string, error) {
+	bucketName := selectBucketByClient(clientType)
+	res := make([]string, 0)
+	e := database.db.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte(bucketName))
+		if bucket == nil {
+			return errors.New("bucket for users was not found")
+		}
+
+		return bucket.ForEach(func(key, value []byte) error {
+			res = append(res, string(key))
+			return nil
+		})
+	})
+
+	return res, e
 }
 
 func (database *Database) Close() {

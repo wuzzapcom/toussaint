@@ -10,7 +10,7 @@ func TestGetClientType(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, Telegram, clientType)
 
-	clientType, err = GetClientType("smth",)
+	clientType, err = GetClientType("smth")
 	assert.NotNil(t, err)
 	assert.Equal(t, -1, int(clientType))
 	//t.Log(clientType)

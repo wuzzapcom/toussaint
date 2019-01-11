@@ -6,6 +6,7 @@ import (
 )
 
 type ClientType int
+
 const (
 	Telegram ClientType = iota
 )
@@ -22,6 +23,7 @@ func GetClientType(str string) (ClientType, error) {
 }
 
 type RequestType int
+
 const (
 	All = iota
 	Sale
@@ -53,13 +55,13 @@ type Client interface {
 func NewTelegramClient(id string) Client {
 	return &telegramClient{
 		subscriptions: make([]string, 0),
-		id: id,
+		id:            id,
 	}
 }
 
 type telegramClient struct {
 	subscriptions []string
-	id string
+	id            string
 }
 
 func (tc *telegramClient) Type() ClientType {
