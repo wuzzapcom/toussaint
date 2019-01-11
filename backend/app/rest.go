@@ -248,7 +248,6 @@ func handleGetUsers(w http.ResponseWriter, r *http.Request) {
 		Ids: users,
 	}
 
-
 	marshalled, err := json.Marshal(usersJSON)
 	if err != nil {
 		log.Printf("[ERR] GET /users json.Marshal: %+v", err)

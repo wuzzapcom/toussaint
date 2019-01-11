@@ -5,7 +5,7 @@ type GamesJSON struct {
 }
 
 type GamePair struct {
-	Id string `json:"id"`
+	Id          string `json:"id"`
 	Description string `json:"description"`
 }
 
