@@ -2,13 +2,22 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"toussaint/backend/app"
+	"toussaint/backend/cli"
 )
 
 func main() {
-	srv := app.SetupRestApi("localhost", 9999)
 
-	updater, err := app.NewUpdater("24h", "02:00")
+	params, err := cli.ParseCLI()
+	if err != nil {
+		//log.Printf("[WAR] cli.ParseCLI: %+v", err)
+		os.Exit(0)
+	}
+
+	srv := app.SetupRestApi(params.Host, params.Post)
+
+	updater, err := app.NewUpdater(params.TimeBetweenUpdatesStr, params.UpdateTimeStr)
 	if err != nil {
 		panic(err)
 	}
