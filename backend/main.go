@@ -11,7 +11,6 @@ func main() {
 
 	params, err := cli.ParseCLI()
 	if err != nil {
-		//log.Printf("[WAR] cli.ParseCLI: %+v", err)
 		os.Exit(0)
 	}
 
@@ -26,7 +25,6 @@ func main() {
 
 	go updater.Start()
 	defer updater.Stop()
-
 
 	fmt.Println("Starting server...")
 

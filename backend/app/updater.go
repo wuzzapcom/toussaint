@@ -20,10 +20,10 @@ func NewUpdater(betweenUpdates, updateTime string) (*Updater, error) {
 
 	return &Updater{
 		betweenUpdates: btw,
-		updateTime: upd,
-		updaterFunc: update,
-		stop: make(chan bool, 0),
-		finished: make(chan bool),
+		updateTime:     upd,
+		updaterFunc:    update,
+		stop:           make(chan bool, 0),
+		finished:       make(chan bool),
 	}, nil
 }
 
@@ -48,11 +48,10 @@ func (updater *Updater) Start() {
 			updater.updaterFunc()
 		case <-updater.stop:
 			ticker.Stop()
-			updater.finished<-true
+			updater.finished <- true
 		}
 	}
 }
-
 
 func (updater *Updater) Stop() {
 	updater.stop <- true

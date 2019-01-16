@@ -21,11 +21,11 @@ func TestUpdater(t *testing.T) {
 
 	updater := Updater{
 		betweenUpdates: btw,
-		updateTime: upd,
+		updateTime:     upd,
 		updaterFunc: func() {
 			atomic.AddInt32(&done, 1)
 		},
-		stop: make(chan bool, 0),
+		stop:     make(chan bool, 0),
 		finished: make(chan bool),
 	}
 
@@ -49,7 +49,6 @@ func TestUpdaterFunc(t *testing.T) {
 
 	loaded, err := database.GetGame(game.Id)
 	assert.Nil(t, err)
-
 
 	assert.NotEqual(t, game.Name, loaded.Name)
 }
