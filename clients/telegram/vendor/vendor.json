@@ -1,0 +1,25 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "ViY5wN6KsQIbRVCCCDpL/P7xNuc=",
+			"path": "github.com/go-telegram-bot-api/telegram-bot-api",
+			"revision": "ec221ba9ea458cd5386c35dd90af04b8a895f8eb",
+			"revisionTime": "2018-12-25T21:56:58Z"
+		},
+		{
+			"checksumSHA1": "HxzHdSrw2oBjI+Cbbj0YNnC+Mpk=",
+			"path": "github.com/jessevdk/go-flags",
+			"revision": "c0795c8afcf41dd1d786bebce68636c199b3bb45",
+			"revisionTime": "2018-12-21T19:31:53Z"
+		},
+		{
+			"checksumSHA1": "t8jzPFIv4DNACv+cuZoigNmjPLQ=",
+			"path": "github.com/technoweenie/multipartstreamer",
+			"revision": "a90a01d73ae432e2611d178c18367fbaa13e0154",
+			"revisionTime": "2013-10-20T00:18:33Z"
+		}
+	],
+	"rootPath": "toussaint/clients/telegram"
+}
