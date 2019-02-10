@@ -1,11 +1,12 @@
 package cache
 
 import (
-	"github.com/go-telegram-bot-api/telegram-bot-api"
 	"log"
 	"sync"
 	"time"
 	"toussaint/clients/telegram/app/srv"
+
+	"github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
 var delay = time.Duration(5 * time.Hour)
@@ -67,6 +68,7 @@ func HandleMessage(message *tgbotapi.Message) (string, error) {
 type Context struct {
 	state     srv.State
 	updatedAt time.Time
+	payload   interface{}
 
 	mu sync.Mutex
 }
@@ -75,7 +77,12 @@ func (c *Context) HandleMessage(message *tgbotapi.Message) (string, bool, error)
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	return c.state.HandleMessage(message)
+	answer, shouldCache, newState, payload, err := c.state.HandleMessage(message, c.payload)
+
+	c.state = newState
+	c.payload = payload
+
+	return answer, shouldCache, err
 }
 
 func validator(stopValidator chan bool) {

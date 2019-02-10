@@ -5,6 +5,7 @@ import "github.com/jessevdk/go-flags"
 type CLI struct {
 	TelegramBotToken string `short:"t" long:"token" description:"token for authorization to telegram bot"`
 	Debug            bool   `long:"debug" description:"enable telegram debug"`
+	Backend          string `short:"b" long:"backend" description:"toussaint backend url" default:"127.0.0.1:8080"`
 }
 
 func ParseCLI() (*CLI, error) {

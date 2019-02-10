@@ -1,9 +1,10 @@
 package app
 
 import (
-	"github.com/go-telegram-bot-api/telegram-bot-api"
 	"log"
 	"toussaint/clients/telegram/app/cache"
+
+	"github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
 func NewTelegram(token string, debug bool) (*Telegram, error) {

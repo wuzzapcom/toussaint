@@ -6,6 +6,7 @@ import (
 	"toussaint/clients/telegram/app"
 	"toussaint/clients/telegram/app/cache"
 	"toussaint/clients/telegram/app/cli"
+	"toussaint/clients/telegram/app/srv"
 )
 
 func main() {
@@ -14,13 +15,14 @@ func main() {
 
 	params, err := cli.ParseCLI()
 	if err != nil {
-		fmt.Println(err)
 		os.Exit(0)
 	}
 
+	srv.APIEndpoint = fmt.Sprintf("http://%s/v1", params.Backend)
+
 	tg, err := app.NewTelegram(params.TelegramBotToken, params.Debug)
 	if err != nil {
-		fmt.Printf("Failed initialization of telegram bot: %+v", err)
+		fmt.Printf("[ERR] Failed initialization of telegram bot: %+v", err)
 		os.Exit(-1)
 	}
 
