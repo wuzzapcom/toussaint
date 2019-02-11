@@ -159,6 +159,29 @@ func (database *Database) GetGames() (games []Game, err error) {
 	return games, err
 }
 
+func (database *Database) GetIDByGameName(name string) (id string, err error) {
+	err = database.db.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte(gamesBucketName))
+		if bucket == nil {
+			return errors.New("bucket for games was not found")
+		}
+
+		return bucket.ForEach(func(k, v []byte) error {
+			var game Game
+			e := json.Unmarshal(v, &game)
+			if e != nil {
+				return e
+			}
+
+			if game.Name == name {
+				id = game.Id
+			}
+			return nil
+		})
+	})
+	return
+}
+
 func (database *Database) DeleteGame(id string) error {
 	return database.db.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(gamesBucketName))

@@ -10,4 +10,9 @@ const notify_ok_msg_ru = "Вы успешно подписались на уве
 const help_msg_ru = `/help -- показать это сообщение
 /list -- показать список игр, на которые вы подписаны
 /search [SMTH] - выполнить поиск игры и подписаться на нее
+/delete [SMTH] - отписаться от уведомлений на игры
 `
+const search_expected_game_name_msg_ru = "Ожидается название игры: /search GAME_NAME"
+const delete_expected_game_name_msg_ru = "Ожидается название игры: /delete GAME_NAME"
+const delete_notify_fail_msg_ru = "Удаление не удалось, попробуйте еще раз."
+const delete_notify_ok_msg_ru = "Успешно удалено!"

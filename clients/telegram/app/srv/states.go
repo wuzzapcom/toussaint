@@ -70,10 +70,10 @@ func handleNoState(message *tgbotapi.Message, payload interface{}) (string, bool
 		}
 		return string(listMsg), false, NO_STATE, nil, nil
 	case "/search":
-		params := url.Values{}
-		params.Add("name", msg)
-
-		resp, err := performRequest("GET", fmt.Sprintf("/game?%s", params.Encode()), nil)
+		if len(msg) == 0 {
+			return search_expected_game_name_msg_ru, false, NO_STATE, nil, nil
+		}
+		resp, err := performRequest("GET", fmt.Sprintf("/search?name=%s", url.QueryEscape(msg)), nil)
 		if err != nil {
 			return get_game_fail_msg_ru, false, NO_STATE, nil, err
 		}
@@ -93,6 +93,29 @@ func handleNoState(message *tgbotapi.Message, payload interface{}) (string, bool
 			descs += fmt.Sprintf("%d %s\n", i+1, game.Description)
 		}
 		return descs, true, SEARCH_GAME_WAIT_GAME, ids, nil
+	case "/delete":
+		if len(msg) == 0 {
+			return delete_expected_game_name_msg_ru, false, NO_STATE, nil, nil
+		}
+		resp, err := performRequest("GET", fmt.Sprintf("/game?name=%s", url.QueryEscape(msg)), nil)
+		if err != nil {
+			return get_game_fail_msg_ru, false, NO_STATE, nil, err
+		}
+		id, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return get_game_fail_msg_ru, false, NO_STATE, nil, err
+		}
+
+		resp, err = performRequest(
+			"DELETE",
+			fmt.Sprintf("/notify?client-id=%d&client-type=telegram&game-id=%s", message.From.ID, url.QueryEscape(string(id))),
+			nil,
+		)
+
+		if resp.StatusCode != http.StatusOK {
+			return delete_notify_fail_msg_ru, false, NO_STATE, nil, fmt.Errorf("got status code %d", resp.StatusCode)
+		}
+		return delete_notify_ok_msg_ru, false, NO_STATE, nil, nil
 	case "/help":
 		return help_msg_ru, false, NO_STATE, nil, nil
 	default:

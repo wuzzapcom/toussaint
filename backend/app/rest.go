@@ -3,25 +3,34 @@ package app
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gorilla/mux"
 	"log"
 	"net/http"
+	"net/url"
 	"time"
 	"toussaint/backend/structs"
+
+	"github.com/gorilla/mux"
 )
 
 var database = NewDatabase()
 
-func handleGetGame(w http.ResponseWriter, r *http.Request) {
+func handleSearch(w http.ResponseWriter, r *http.Request) {
 	name := r.URL.Query().Get("name")
 	if name == "" {
 		w.WriteHeader(http.StatusNotAcceptable)
 		return
 	}
 
+	name, err := url.QueryUnescape(name)
+	if err != nil {
+		log.Printf("[ERR] GET /search: %+v", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
 	searched, err := SearchByName(name)
 	if err != nil {
-		log.Printf("[ERR] GET /game: %+v", err)
+		log.Printf("[ERR] GET /search: %+v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -39,12 +48,42 @@ func handleGetGame(w http.ResponseWriter, r *http.Request) {
 
 	marshalled, err := json.Marshal(games)
 	if err != nil {
-		log.Printf("[ERR] GET /game: %+v", err)
+		log.Printf("[ERR] GET /search: %+v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	w.Write(marshalled)
+}
+
+func handleGetGame(w http.ResponseWriter, r *http.Request) {
+	name := r.URL.Query().Get("name")
+	if name == "" {
+		w.WriteHeader(http.StatusNotAcceptable)
+		return
+	}
+
+	name, err := url.QueryUnescape(name)
+	if err != nil {
+		log.Printf("[ERR] GET /game: %+v", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	id, err := database.GetIDByGameName(name)
+	if err != nil {
+		log.Printf("[ERR] GET /game: %+v", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if id == "" {
+		log.Printf("[ERR] GET /game: game not found")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	w.Write([]byte(id))
 }
 
 func handlePutRegister(w http.ResponseWriter, r *http.Request) {
@@ -54,9 +93,23 @@ func handlePutRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	clientId, err := url.QueryUnescape(clientId)
+	if err != nil {
+		log.Printf("[ERR] PUT /register: %+v", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
 	clientTypeStr := r.URL.Query().Get("client-type")
 	if clientTypeStr == "" {
 		w.WriteHeader(http.StatusNotAcceptable)
+		return
+	}
+
+	clientTypeStr, err = url.QueryUnescape(clientTypeStr)
+	if err != nil {
+		log.Printf("[ERR] PUT /register: %+v", err)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
@@ -95,9 +148,23 @@ func handlePutNotify(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	clientId, err := url.QueryUnescape(clientId)
+	if err != nil {
+		log.Printf("[ERR] PUT /notify: %+v", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
 	clientTypeStr := r.URL.Query().Get("client-type")
 	if clientTypeStr == "" {
 		w.WriteHeader(http.StatusNotAcceptable)
+		return
+	}
+
+	clientTypeStr, err = url.QueryUnescape(clientTypeStr)
+	if err != nil {
+		log.Printf("[ERR] PUT /notify: %+v", err)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
@@ -111,6 +178,13 @@ func handlePutNotify(w http.ResponseWriter, r *http.Request) {
 	gameId := r.URL.Query().Get("game-id")
 	if gameId == "" {
 		w.WriteHeader(http.StatusNotAcceptable)
+		return
+	}
+
+	gameId, err = url.QueryUnescape(gameId)
+	if err != nil {
+		log.Printf("[ERR] PUT /notify: %+v", err)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
@@ -148,15 +222,36 @@ func handleDeleteNotify(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	gameId, err := url.QueryUnescape(gameId)
+	if err != nil {
+		log.Printf("[ERR] DELETE /notify: %+v", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
 	clientId := r.URL.Query().Get("client-id")
 	if clientId == "" {
 		w.WriteHeader(http.StatusNotAcceptable)
 		return
 	}
 
+	clientId, err = url.QueryUnescape(clientId)
+	if err != nil {
+		log.Printf("[ERR] DELETE /notify: %+v", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
 	clientTypeStr := r.URL.Query().Get("client-type")
 	if clientTypeStr == "" {
 		w.WriteHeader(http.StatusNotAcceptable)
+		return
+	}
+
+	clientTypeStr, err = url.QueryUnescape(clientTypeStr)
+	if err != nil {
+		log.Printf("[ERR] DELETE /notify: %+v", err)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
@@ -185,9 +280,23 @@ func handleGetList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	clientId, err := url.QueryUnescape(clientId)
+	if err != nil {
+		log.Printf("[ERR] GET /list: %+v", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
 	clientTypeStr := r.URL.Query().Get("client-type")
 	if clientTypeStr == "" {
 		w.WriteHeader(http.StatusNotAcceptable)
+		return
+	}
+
+	clientTypeStr, err = url.QueryUnescape(clientTypeStr)
+	if err != nil {
+		log.Printf("[ERR] GET /list: %+v", err)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
@@ -201,6 +310,13 @@ func handleGetList(w http.ResponseWriter, r *http.Request) {
 	requestTypeStr := r.URL.Query().Get("request-type")
 	if requestTypeStr == "" {
 		w.WriteHeader(http.StatusNotAcceptable)
+		return
+	}
+
+	requestTypeStr, err = url.QueryUnescape(requestTypeStr)
+	if err != nil {
+		log.Printf("[ERR] GET /list: %+v", err)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
@@ -227,6 +343,13 @@ func handleGetUsers(w http.ResponseWriter, r *http.Request) {
 	clientTypeStr := r.URL.Query().Get("client-type")
 	if clientTypeStr == "" {
 		w.WriteHeader(http.StatusNotAcceptable)
+		return
+	}
+
+	clientTypeStr, err := url.QueryUnescape(clientTypeStr)
+	if err != nil {
+		log.Printf("[ERR] GET /users: %+v", err)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
@@ -261,6 +384,7 @@ func handleGetUsers(w http.ResponseWriter, r *http.Request) {
 func SetupRestApi(host string, port int) *http.Server {
 	router := mux.NewRouter()
 
+	router.HandleFunc("/v1/search", handleSearch).Methods("GET")
 	router.HandleFunc("/v1/game", handleGetGame).Methods("GET")
 	router.HandleFunc("/v1/register", handlePutRegister).Methods("PUT")
 	router.HandleFunc("/v1/notify", handlePutNotify).Methods("PUT")

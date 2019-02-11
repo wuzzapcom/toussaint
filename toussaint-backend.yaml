@@ -11,7 +11,7 @@ info:
 schemes:
   - "http"
 paths:
-  /game:
+  /search:
     get:
       description: "Find games in PSN by name"
       produces:
@@ -30,6 +30,23 @@ paths:
           schema:
             items:
               $ref: "#/definitions/Games"
+  /game:
+    get:
+      description: "Get game ID by name"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "name"
+          in: "query"
+          description: "name of searching game"
+          required: true
+          type: "string"
+      responses:
+        400:
+          description: "Bad request"
+        200:
+          description: "successful operation"
+          type: "string"
   /notify:
     put:
       consumes:

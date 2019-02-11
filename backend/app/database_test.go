@@ -1,9 +1,10 @@
 package app
 
 import (
-	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func removeDB(t *testing.T) {
@@ -97,4 +98,16 @@ func TestGetGames(t *testing.T) {
 	assert.Equal(t, game1, games[0])
 	assert.Equal(t, game2, games[1])
 	assert.Equal(t, game3, games[2])
+}
+
+func TestGetIdByName(t *testing.T) {
+	defer removeDB(t)
+
+	game1 := Game{Id: "1", Name: "123"}
+	err := database.AddGame(game1)
+	assert.Nil(t, err)
+
+	id, err := database.GetIDByGameName(game1.Name)
+	assert.Nil(t, err)
+	assert.Equal(t, game1.Id, id)
 }
