@@ -1,0 +1,22 @@
+version: '3.7'
+services:
+  toussaint-backend:
+    build:
+      context: ../..
+      dockerfile: docker/telegram/backend.dockerfile
+    environment:
+      - IP=toussaint-backend
+    volumes:
+      - ../../:/home
+  toussaint-telegram:
+    build:
+      context: ../..
+      dockerfile: docker/telegram/telegram.dockerfile
+    secrets:
+      - telegram-token
+    environment:
+      - BACKEND_URL="toussaint-backend:8080"
+      - TOKEN_FILE=/run/secrets/telegram-token
+secrets:
+  telegram-token:
+    file: ./telegram-token
