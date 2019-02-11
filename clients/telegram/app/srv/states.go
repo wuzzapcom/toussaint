@@ -90,8 +90,9 @@ func handleNoState(message *tgbotapi.Message, payload interface{}) (string, bool
 		var descs string
 		for i, game := range games.Games {
 			ids[i] = game.Id
-			descs += fmt.Sprintf("%d %s\n", i+1, game.Description)
+			descs += fmt.Sprintf("%d) %s\n", i+1, game.Description)
 		}
+		descs += fmt.Sprintf("%d) %s", len(games.Games)+1, cancel_search_msg_ru)
 		return descs, true, SEARCH_GAME_WAIT_GAME, ids, nil
 	case "/delete":
 		if len(msg) == 0 {
@@ -133,8 +134,12 @@ func handleSearchGameWaitGame(message *tgbotapi.Message, payload interface{}) (s
 		return get_game_number_fail_msg_ru, false, NO_STATE, nil, err
 	}
 
-	if num > len(ids) {
+	if num > len(ids)+1 {
 		return get_game_number_fail_msg_ru, false, NO_STATE, nil, fmt.Errorf("id great than array size")
+	}
+
+	if num  == len(ids) + 1 {
+		return cancelled_ok_msg_ru, false, NO_STATE, nil, nil
 	}
 
 	resp, err := performRequest(
