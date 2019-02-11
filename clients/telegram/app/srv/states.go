@@ -93,6 +93,8 @@ func handleNoState(message *tgbotapi.Message, payload interface{}) (string, bool
 			descs += fmt.Sprintf("%d %s\n", i+1, game.Description)
 		}
 		return descs, true, SEARCH_GAME_WAIT_GAME, ids, nil
+	case "/help":
+		return help_msg_ru, false, NO_STATE, nil, nil
 	default:
 		return unimplemented_msg_ru, false, NO_STATE, nil, nil
 	}
