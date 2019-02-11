@@ -1,7 +1,7 @@
 # Toussaint
 
-Toussaint is a project for tracking sales in Playstation Store.
-It provides an universal backend with single frontend: telegram bot.
+Toussaint is a project for tracking sales in Playstation Store.  
+It provides an universal backend with single frontend telegram bot.  
 But new frontends will appear in future.
 
 ## Deploy
