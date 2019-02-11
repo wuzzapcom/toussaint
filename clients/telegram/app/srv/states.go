@@ -69,6 +69,19 @@ func handleNoState(message *tgbotapi.Message, payload interface{}) (string, bool
 			return get_list_fail_msg_ru, false, NO_STATE, nil, err
 		}
 		return string(listMsg), false, NO_STATE, nil, nil
+	case "/sale":
+		resp, err := performRequest("GET", fmt.Sprintf("/list?client-id=%d&client-type=telegram&request-type=sale", message.From.ID), nil)
+		if err != nil {
+			return get_list_fail_msg_ru, false, NO_STATE, nil, err
+		}
+		if resp.StatusCode != http.StatusOK {
+			return get_list_fail_msg_ru, false, NO_STATE, nil, fmt.Errorf("got status code %d", resp.StatusCode)
+		}
+		listMsg, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return get_list_fail_msg_ru, false, NO_STATE, nil, err
+		}
+		return string(listMsg), false, NO_STATE, nil, nil
 	case "/search":
 		if len(msg) == 0 {
 			return search_expected_game_name_msg_ru, false, NO_STATE, nil, nil
