@@ -147,7 +147,7 @@ func handleSearchGameWaitGame(message *tgbotapi.Message, payload interface{}) (s
 		return get_game_number_fail_msg_ru, false, NO_STATE, nil, err
 	}
 
-	if num > len(ids)+1 {
+	if num > len(ids)+1 || num <= 0 {
 		return get_game_number_fail_msg_ru, false, NO_STATE, nil, fmt.Errorf("id great than array size")
 	}
 
