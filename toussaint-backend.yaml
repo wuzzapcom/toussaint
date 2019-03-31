@@ -48,6 +48,27 @@ paths:
           description: "successful operation"
           type: "string"
   /notify:
+    get:
+      consumes:
+        - "application/json" 
+      description: "Gets notifications for client"
+      parameters:
+        - name: "client-id"
+          in: "query"
+          description: "id of client"
+          required: true
+          type: "string"
+        - name: "client-type"
+          in: "query"
+          description: "type of client"
+          required: true
+          type: "string"
+          enum:
+            - "telegram"
+      responses:
+        200:
+          schema:
+            $ref: "#/definitions/Games"
     put:
       consumes:
         - "application/json"

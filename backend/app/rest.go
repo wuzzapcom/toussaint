@@ -140,6 +140,68 @@ func handlePutRegister(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
+func handleGetNotify(w http.ResponseWriter, r *http.Request) {
+	clientId := r.URL.Query().Get("client-id")
+	if clientId == "" {
+		w.WriteHeader(http.StatusNotAcceptable)
+		return
+	}
+
+	clientId, err := url.QueryUnescape(clientId)
+	if err != nil {
+		log.Printf("[ERR] GET /notify: %+v", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	clientTypeStr := r.URL.Query().Get("client-type")
+	if clientTypeStr == "" {
+		w.WriteHeader(http.StatusNotAcceptable)
+		return
+	}
+
+	clientTypeStr, err = url.QueryUnescape(clientTypeStr)
+	if err != nil {
+		log.Printf("[ERR] GET /notify: %+v", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	clientType, err := GetClientType(clientTypeStr)
+	if err != nil {
+		log.Printf("[ERR] GET /notify GetClientType: %+v", err)
+		w.WriteHeader(http.StatusNotAcceptable)
+		return
+	}
+
+	got, err := database.GetNotificationsAndClear(clientType, clientId)
+	if err != nil {
+		log.Printf("[ERR] GET /notify GetNotificationsAndClear: %+v", err)
+		w.WriteHeader(http.StatusNotAcceptable)
+		return
+	}
+
+	ids, msgs := DescribeGames(got)
+
+	games := structs.GamesJSON{
+		Games: make([]structs.GamePair, len(ids)),
+	}
+
+	for i := 0; i < len(ids); i++ {
+		games.Games[i].Id = ids[i]
+		games.Games[i].Description = msgs[i]
+	}
+
+	marshalled, err := json.Marshal(games)
+	if err != nil {
+		log.Printf("[ERR] GET /search: %+v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(marshalled)
+}
+
 func handlePutNotify(w http.ResponseWriter, r *http.Request) {
 
 	clientId := r.URL.Query().Get("client-id")

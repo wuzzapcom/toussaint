@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/boltdb/bolt"
 	"log"
+
+	"github.com/boltdb/bolt"
 )
 
 /*
@@ -361,6 +362,12 @@ func (database *Database) DeleteGameFromUser(gameID string, clientID string, cli
 			}
 		}
 
+		for i, sub := range storable.ActiveNotifications {
+			if sub == gameID {
+				storable.Subscriptions = append(storable.Subscriptions[:i], storable.Subscriptions[i+1:]...)
+			}
+		}
+
 		buf, err := json.Marshal(storable)
 		if err != nil {
 			return err
@@ -391,6 +398,101 @@ func (database *Database) GetUsers(clientType ClientType) ([]string, error) {
 	})
 
 	return res, e
+}
+
+func (database *Database) AddNotifications(updatedGamesIds []string) error {
+	//TODO here should be buckets for every client
+	bucketName := selectBucketByClient(Telegram)
+	return database.db.Update(func(tx *bolt.Tx) error {
+
+		usersBucket := tx.Bucket([]byte(bucketName))
+		if usersBucket == nil {
+			return errors.New("bucket for users was not found")
+		}
+
+		modifiedValues := make([][]byte, 0)
+		modifiedKeys := make([][]byte, 0)
+		usersBucket.ForEach(func(k, v []byte) error {
+			var storable StorableClient
+			err := json.Unmarshal(v, &storable)
+			if err != nil {
+				return err
+			}
+
+			for _, gameId := range updatedGamesIds {
+				storable.AddActiveNotification(gameId)
+				buf, err := json.Marshal(storable)
+				if err != nil {
+					return err
+				}
+				modifiedKeys = append(modifiedKeys, k)
+				modifiedValues = append(modifiedValues, buf)
+			}
+
+			return nil
+		})
+
+		for i := 0; i < len(modifiedKeys); i++ {
+			err := usersBucket.Put(modifiedKeys[i], modifiedValues[i])
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+}
+
+func (database *Database) GetNotificationsAndClear(clientType ClientType, userID string) ([]Game, error) {
+	bucketName := selectBucketByClient(Telegram)
+	var ids []string
+	erro := database.db.Update(func(tx *bolt.Tx) error {
+		usersBucket := tx.Bucket([]byte(bucketName))
+		if usersBucket == nil {
+			return errors.New("bucket for users was not found")
+		}
+
+		userBytes := usersBucket.Get([]byte(userID))
+		if userBytes == nil {
+			return errors.New("user was not found")
+		}
+
+		var storable StorableClient
+		err := json.Unmarshal(userBytes, &storable)
+		if err != nil {
+			return err
+		}
+
+		ids = storable.ActiveNotifications
+		storable.ActiveNotifications = make([]string, 0)
+
+		buf, err := json.Marshal(storable)
+		if err != nil {
+			return err
+		}
+
+		err = usersBucket.Put([]byte(userID), buf)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if erro != nil {
+		return nil, erro
+	}
+
+	games := make([]Game, len(ids))
+	for i, id := range ids {
+		g, err := database.GetGame(id)
+		if err != nil {
+			return nil, err
+		}
+		games[i] = g
+	}
+
+	return games, nil
 }
 
 func (database *Database) Close() {

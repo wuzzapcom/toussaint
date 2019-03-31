@@ -3,12 +3,13 @@ package app
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"toussaint/backend/structs"
+
+	"github.com/stretchr/testify/assert"
 )
 
 //func TestGetGame1(t *testing.T) {
@@ -178,4 +179,44 @@ func TestGetList(t *testing.T) {
 	assert.Nil(t, err)
 
 	t.Log(string(data))
+}
+
+func getNotify(t *testing.T, expectedStatus int) structs.GamesJSON {
+	srv := httptest.NewServer(http.HandlerFunc(handleGetNotify))
+
+	resp, err := http.Get(fmt.Sprintf("%s%s", srv.URL, "/notify?client-id=1&client-type=telegram"))
+	assert.Nil(t, err)
+	assert.Equal(t, expectedStatus, resp.StatusCode)
+
+	data, err := ioutil.ReadAll(resp.Body)
+	assert.Nil(t, err)
+
+	var games structs.GamesJSON
+	err = json.Unmarshal(data, &games)
+	assert.Nil(t, err)
+
+	return games
+}
+
+func makeGameActive(t *testing.T, gameID string) {
+	err := database.AddNotifications([]string{gameID})
+	assert.Nil(t, err)
+}
+
+func TestGetNotifty(t *testing.T) {
+	defer removeDB(t)
+
+	registerUser(t, http.StatusCreated)
+
+	g := getNotify(t, http.StatusOK)
+	assert.Equal(t, 0, len(g.Games))
+
+	gameID := "EP9000-CUSA11995_00-MARVELSSPIDERMAN"
+
+	putNotify(t, http.StatusCreated, gameID)
+	makeGameActive(t, gameID)
+
+	g = getNotify(t, http.StatusOK)
+	assert.Equal(t, 1, len(g.Games))
+	t.Log(g)
 }

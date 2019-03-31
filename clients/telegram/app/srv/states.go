@@ -155,6 +155,7 @@ func handleSearchGameWaitGame(message *tgbotapi.Message, payload interface{}) (s
 		return cancelled_ok_msg_ru, false, NO_STATE, nil, nil
 	}
 
+	fmt.Printf("wtf id is %d", num)
 	resp, err := performRequest(
 		"PUT",
 		fmt.Sprintf("/notify?client-id=%d&client-type=telegram&game-id=%s", message.From.ID, ids[num-1]),

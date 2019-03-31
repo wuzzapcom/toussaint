@@ -41,12 +41,23 @@ func GetRequestType(str string) (RequestType, error) {
 }
 
 type StorableClient struct {
-	Subscriptions []string `json:"subs"`
+	Subscriptions       []string `json:"subs"`
+	ActiveNotifications []string `json:"notifications"`
+}
+
+func (storableClient *StorableClient) AddActiveNotification(gameId string) {
+	for _, subscription := range storableClient.Subscriptions {
+		if subscription == gameId {
+			storableClient.ActiveNotifications = append(storableClient.ActiveNotifications, gameId)
+			return
+		}
+	}
 }
 
 type Client interface {
 	Type() ClientType
 	Subscriptions() []string
+	Notifications() []string
 	ID() string
 	Storable() StorableClient
 	AddSubscription(subscription string)
@@ -54,14 +65,16 @@ type Client interface {
 
 func NewTelegramClient(id string) Client {
 	return &telegramClient{
-		subscriptions: make([]string, 0),
-		id:            id,
+		subscriptions:       make([]string, 0),
+		activeNotifications: make([]string, 0),
+		id:                  id,
 	}
 }
 
 type telegramClient struct {
-	subscriptions []string
-	id            string
+	subscriptions       []string
+	activeNotifications []string
+	id                  string
 }
 
 func (tc *telegramClient) Type() ClientType {
@@ -72,13 +85,18 @@ func (tc *telegramClient) Subscriptions() []string {
 	return tc.subscriptions
 }
 
+func (tc *telegramClient) Notifications() []string {
+	return tc.activeNotifications
+}
+
 func (tc *telegramClient) ID() string {
 	return tc.id
 }
 
 func (tc *telegramClient) Storable() StorableClient {
 	return StorableClient{
-		Subscriptions: tc.Subscriptions(),
+		Subscriptions:       tc.Subscriptions(),
+		ActiveNotifications: tc.Notifications(),
 	}
 }
 

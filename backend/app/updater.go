@@ -65,17 +65,32 @@ func update() {
 		return
 	}
 
+	var updatedGames = make([]Game, 0)
+	var saleStartedGameIds = make([]string, 0)
+
 	for i := range games {
-		games[i], err = SearchByID(games[i].Id)
+		newGame, err := SearchByID(games[i].Id)
 		if err != nil {
 			log.Printf("[ERR] Update SearchByID: %+v", err)
 			return
 		}
+		if newGame != games[i] {
+			updatedGames = append(updatedGames, newGame)
+		}
+		if newGame.SalePrice != 0 && games[i].SalePrice == 0 {
+			saleStartedGameIds = append(saleStartedGameIds, newGame.Id)
+		}
 	}
 
-	err = database.AddGames(games)
+	err = database.AddGames(updatedGames)
 	if err != nil {
 		log.Printf("[ERR] Update AddGames: %+v", err)
+		return
+	}
+
+	err = database.AddNotifications(saleStartedGameIds)
+	if err != nil {
+		log.Printf("[ERR] Update AddNotifications: %+v", err)
 		return
 	}
 }
