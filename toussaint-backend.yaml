@@ -10,9 +10,11 @@ info:
     url: "http://www.apache.org/licenses/LICENSE-2.0.html"
 schemes:
   - "http"
+basePath: "/v1"
 paths:
   /search:
     get:
+      operationId: "get_search"
       description: "Find games in PSN by name"
       produces:
         - "application/json"
@@ -32,6 +34,7 @@ paths:
               $ref: "#/definitions/Games"
   /game:
     get:
+      operationId: "get_game"
       description: "Get game ID by name"
       produces:
         - "application/json"
@@ -46,9 +49,11 @@ paths:
           description: "Bad request"
         200:
           description: "successful operation"
-          type: "string"
+          schema:
+            type: "string"
   /notify:
     put:
+      operationId: "put_notify"
       consumes:
         - "application/json"
       description: "Subscribes given client to given game price changes"
@@ -65,7 +70,8 @@ paths:
           type: "string"
           enum:
             - "telegram"
-        - in: "game-id"
+        - name: "game-id"
+          in: "query"
           description: "game id that user wants to be subscribed"
           required: true
           type: "string"
@@ -76,6 +82,7 @@ paths:
           description: "Invalid input"
     delete:
       description: "Removes subscription of given client to given game"
+      operationId: "delete_notify"
       parameters:
         - name: "game-id"
           in: "query"
@@ -102,6 +109,7 @@ paths:
 
   /register:
     put:
+      operationId: "put_register"
       description: "Registers new user"
       parameters:
         - name: "client-id"
@@ -124,6 +132,7 @@ paths:
 
   /users:
     get:
+      operationId: "get_users"
       description: "Get all users for single client-type"
       parameters:
         - name: "client-type"
@@ -138,9 +147,12 @@ paths:
           description: "successful operation"
           schema:
             type: "array"
+            items:
+              type: "string"
             # json Users with field Ids []string
   /list:
     get:
+      operationId: "get_list"
       description: "Generates list of games given user subscribed"
       produces:
         - "application/json"
@@ -167,11 +179,14 @@ paths:
       responses:
         200:
           description: "successful operation"
-          type: "string"
+          schema:
+            type: "string"
 
 definitions:
   Games:
     type: "array"
+    items:
+      $ref: '#/definitions/Game'
   Game:
     type: "object"
     required:
