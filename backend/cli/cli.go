@@ -7,6 +7,7 @@ type CLIParams struct {
 	UpdateTimeStr         string `long:"time" description:"time of first update in format hh:mm" default:"02:00"`
 	Host                  string `long:"host" description:"host that srv listen to" default:"127.0.0.1"`
 	Post                  int    `long:"port" description:"port that srv listen to" default:"8080"`
+	Debug                 bool   `short:"d" long:"debug" description:"run backend in debug mode with additional test endpoints"`
 }
 
 func ParseCLI() (*CLIParams, error) {

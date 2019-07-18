@@ -4,7 +4,7 @@ import (
 	"log"
 	"toussaint/clients/telegram/app/cache"
 
-	"github.com/go-telegram-bot-api/telegram-bot-api"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
 func NewTelegram(token string, debug bool) (*Telegram, error) {
@@ -15,7 +15,7 @@ func NewTelegram(token string, debug bool) (*Telegram, error) {
 
 	bot.Debug = debug
 
-	log.Printf("[INF] NewTelegram: authorized on account %s", bot.Self.UserName)
+	log.Printf("telegram: authorized on account %s", bot.Self.UserName)
 
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
@@ -39,6 +39,11 @@ type Telegram struct {
 }
 
 func (tg *Telegram) Start() error {
+
+	notifier := NewNotifier(tg)
+	notifier.Start()
+	defer notifier.Stop()
+	log.Printf("started notifier")
 
 	updateChan, err := tg.bot.GetUpdatesChan(tg.updateConfig)
 	if err != nil {

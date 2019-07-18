@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/go-telegram-bot-api/telegram-bot-api"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
 func TestHandleNoStateStart1(t *testing.T) {
@@ -49,7 +49,7 @@ func TestHandleNoStateStart2(t *testing.T) {
 	}
 
 	str, shouldCache, state, p, err := handleNoState(msg, nil)
-	assert.Nil(t, err)
+	assert.NotNil(t, err)
 	assert.Equal(t, register_fail_msg_ru, str)
 	assert.False(t, shouldCache)
 	assert.Equal(t, NO_STATE, state)
@@ -103,7 +103,7 @@ func TestHandleNoStateSearch(t *testing.T) {
 
 	str, shouldCache, state, payload, err := handleNoState(msg, nil)
 	assert.Nil(t, err)
-	assert.Equal(t, "1 Description\n", str)
+	assert.Equal(t, "1) Description\n2) Отменить", str)
 	assert.True(t, shouldCache)
 	assert.Equal(t, SEARCH_GAME_WAIT_GAME, state)
 	_, ok := payload.([]string)

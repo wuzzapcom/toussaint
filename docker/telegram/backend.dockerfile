@@ -5,6 +5,6 @@ RUN go build .
 
 FROM centos:7
 COPY --from=builder "/go/src/toussaint/backend/backend" "/usr/bin"
-RUN echo "backend --host=$IP" > /usr/bin/entrypoint.sh
+RUN echo "backend --host=$IP -d" > /usr/bin/entrypoint.sh
 WORKDIR /home
 ENTRYPOINT ["/bin/bash", "/usr/bin/entrypoint.sh"]

@@ -121,7 +121,25 @@ paths:
           description: "successful deletion"
         406:
           description: "Invalid input"
-
+  /notifications/trigger:
+    get:
+      description: DEBUG MODE ONLY METHOD; triggers notification to target user
+      parameters:
+        - name: "client-id"
+          in: "query"
+          description: "id of client"
+          required: true
+          type: "string"
+        - name: "client-type"
+          in: "query"
+          description: "type of client"
+          required: true
+          type: "string"
+          enum:
+            - "telegram"
+      responses:
+        200:
+          description: successful operation
   /users:
     get:
       description: "Get all users for single client-type"

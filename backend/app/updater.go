@@ -3,6 +3,7 @@ package app
 import (
 	"log"
 	"time"
+	"toussaint/backend/structs"
 )
 
 const TimeFormat = "15:04"
@@ -59,6 +60,9 @@ func (updater *Updater) Stop() {
 }
 
 func update() {
+	// TODO: this code is bad in terms of performance:
+	// 1/ store users and games in memory is bad
+	// 2/ work with database is not optimal at all
 	games, err := database.GetGames()
 	if err != nil {
 		log.Printf("[ERR] Update database.GetGame: %+v", err)
@@ -88,9 +92,44 @@ func update() {
 		return
 	}
 
-	err = database.AddNotifications(saleStartedGameIds)
+	//TODO: implement multiple client types
+	users, err := database.GetUsers(Telegram)
 	if err != nil {
-		log.Printf("[ERR] Update AddNotifications: %+v", err)
+		log.Printf("[ERR] Update GetUsers: %+v", err)
 		return
+	}
+
+	for _, user := range users {
+		games, err := database.GetGamesForUser(user, Telegram, All)
+		if err != nil {
+			log.Printf("[ERR] Update GetGamesForUser: %+v", err)
+			return
+		}
+
+		var sales = make([]Game, 0)
+		for _, saleGame := range saleStartedGameIds {
+			for _, userGame := range games {
+				if saleGame == userGame.Id {
+					sales = append(sales, userGame)
+				}
+			}
+		}
+		ids, descs := DescribeGames(sales)
+		notif := structs.UserNotification{
+			Games: structs.GamesJSON{
+				Games: make([]structs.GamePair, len(ids)),
+			},
+			UserID: user,
+		}
+		for i := range ids {
+			notif.Games.Games[i] = structs.GamePair{
+				Id:          ids[i],
+				Description: descs[i],
+			}
+		}
+		err = notifier.NotifyUser(Telegram, notif)
+		if err != nil {
+			log.Printf("[ERR] Update failed to notify user: %+v", err)
+		}
 	}
 }

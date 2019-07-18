@@ -11,6 +11,11 @@ import (
 	"time"
 )
 
+// to be mocked in tests
+var SearchByName = searchByName
+var SearchByID = searchByID
+var psnURL = "https://store.playstation.com"
+
 func Exit(err error) {
 	fmt.Println(err)
 	os.Exit(-1)
@@ -18,7 +23,7 @@ func Exit(err error) {
 
 func BuildURLForName(name string) (string, error) {
 	fetchSize := "99999"
-	u, err := url.Parse("https://store.playstation.com")
+	u, err := url.Parse(psnURL)
 	if err != nil {
 		return "", err
 	}
@@ -32,7 +37,7 @@ func BuildURLForName(name string) (string, error) {
 
 func BuildURLForID(id string) (string, error) {
 	fetchSize := "99999"
-	u, err := url.Parse("https://store.playstation.com")
+	u, err := url.Parse(psnURL)
 	if err != nil {
 		return "", err
 	}
@@ -162,7 +167,7 @@ func parseSearchAnswer(data []byte) ([]Game, error) {
 	return resultGames, nil
 }
 
-func SearchByName(name string) ([]Game, error) {
+func searchByName(name string) ([]Game, error) {
 	u, err := BuildURLForName(name)
 	if err != nil {
 		return nil, err
@@ -195,7 +200,7 @@ func parseGameDescriptionAnswer(data []byte) (Game, error) {
 	return parseSingleGame(answer)
 }
 
-func SearchByID(id string) (Game, error) {
+func searchByID(id string) (Game, error) {
 	u, err := BuildURLForID(id)
 	if err != nil {
 		return Game{}, err

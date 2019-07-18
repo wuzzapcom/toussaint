@@ -1,1 +1,1 @@
-telegram -b=$BACKEND_URL --token=$(cat /run/secrets/telegram-token)
+telegram -b=$BACKEND_URL --token=$(cat /run/secrets/telegram.token)

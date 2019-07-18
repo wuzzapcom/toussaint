@@ -13,10 +13,10 @@ services:
       context: ../..
       dockerfile: docker/telegram/telegram.dockerfile
     secrets:
-      - telegram-token
+      - telegram.token
     environment:
       - BACKEND_URL="toussaint-backend:8080"
-      - TOKEN_FILE=/run/secrets/telegram-token
+      - TOKEN_FILE=/run/secrets/telegram.token
 secrets:
-  telegram-token:
-    file: ./telegram-token
+  telegram.token:
+    file: ./telegram.token
