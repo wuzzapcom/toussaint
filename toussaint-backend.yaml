@@ -14,6 +14,7 @@ basePath: "/v1"
 paths:
   /search:
     get:
+      operationId: "get_search"
       description: "Find games in PSN by name"
       produces:
         - "application/json"
@@ -33,6 +34,7 @@ paths:
               $ref: "#/definitions/Games"
   /games:
     get:
+      operationId: "get_game"
       description: "Get game ID by name"
       produces:
         - "application/json"
@@ -70,6 +72,7 @@ paths:
           schema:
             $ref: "#/definitions/Notification"
     put:
+      operationId: "put_notify"
       consumes:
         - "application/json"
       description: "Subscribes given client to given game price changes"
@@ -98,6 +101,7 @@ paths:
           description: "Invalid input"
     delete:
       description: "Removes subscription of given client to given game"
+      operationId: "delete_notify"
       parameters:
         - name: "game-id"
           in: "query"
@@ -142,6 +146,7 @@ paths:
           description: successful operation
   /users:
     get:
+      operationId: "get_users"
       description: "Get all users for single client-type"
       parameters:
         - name: "client-type"
@@ -178,6 +183,7 @@ paths:
           description: "conflict"
   /list:
     get:
+      operationId: "get_list"
       description: "Generates list of games given user subscribed"
       produces:
         - "application/json"
