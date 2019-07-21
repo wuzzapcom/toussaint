@@ -19,6 +19,7 @@ func handleSearch(w http.ResponseWriter, r *http.Request) {
 	if httpErr != nil {
 		log.Printf("[ERR] GET /search: %+v", httpErr.Message)
 		w.WriteHeader(httpErr.Code)
+		return
 	}
 
 	searched, err := SearchByName(name)
@@ -54,6 +55,7 @@ func handleGetGames(w http.ResponseWriter, r *http.Request) {
 	if httpErr != nil {
 		log.Printf("[ERR] PUT /games: %+v", httpErr.Message)
 		w.WriteHeader(httpErr.Code)
+		return
 	}
 
 	id, err := database.GetIDByGameName(name)
@@ -77,12 +79,14 @@ func handlePutUsers(w http.ResponseWriter, r *http.Request) {
 	if httpErr != nil {
 		log.Printf("[ERR] PUT /users: %+v", httpErr.Message)
 		w.WriteHeader(httpErr.Code)
+		return
 	}
 
 	clientType, httpErr := parseClientType(r.URL.Query())
 	if httpErr != nil {
 		log.Printf("[ERR] PUT /users: %+v", httpErr.Message)
 		w.WriteHeader(httpErr.Code)
+		return
 	}
 
 	var client Client
@@ -111,18 +115,21 @@ func handlePutNotifications(w http.ResponseWriter, r *http.Request) {
 	if httpErr != nil {
 		log.Printf("[ERR] PUT /notifications: %+v", httpErr.Message)
 		w.WriteHeader(httpErr.Code)
+		return
 	}
 
 	clientType, httpErr := parseClientType(r.URL.Query())
 	if httpErr != nil {
 		log.Printf("[ERR] PUT /notifications: %+v", httpErr.Message)
 		w.WriteHeader(httpErr.Code)
+		return
 	}
 
 	gameID, httpErr := parseQueryParameter(r.URL.Query(), "game-id")
 	if httpErr != nil {
 		log.Printf("[ERR] PUT /notifications: %+v", httpErr.Message)
 		w.WriteHeader(httpErr.Code)
+		return
 	}
 
 	game, err := SearchByID(gameID)
@@ -157,18 +164,21 @@ func handleDeleteNotifications(w http.ResponseWriter, r *http.Request) {
 	if httpErr != nil {
 		log.Printf("[ERR] DELETE /notifications: %+v", httpErr.Message)
 		w.WriteHeader(httpErr.Code)
+		return
 	}
 
 	clientID, httpErr := parseQueryParameter(r.URL.Query(), "client-id")
 	if httpErr != nil {
 		log.Printf("[ERR] DELETE /notifications: %+v", httpErr.Message)
 		w.WriteHeader(httpErr.Code)
+		return
 	}
 
 	clientType, httpErr := parseClientType(r.URL.Query())
 	if httpErr != nil {
 		log.Printf("[ERR] DELETE /notifications: %+v", httpErr.Message)
 		w.WriteHeader(httpErr.Code)
+		return
 	}
 
 	err := database.DeleteGameFromUser(gameID, clientID, clientType)
@@ -187,12 +197,14 @@ func handleGetList(w http.ResponseWriter, r *http.Request) {
 	if httpErr != nil {
 		log.Printf("[ERR] GET /list %+v", httpErr.Message)
 		w.WriteHeader(httpErr.Code)
+		return
 	}
 
 	clientType, httpErr := parseClientType(r.URL.Query())
 	if httpErr != nil {
 		log.Printf("[ERR] GET /list: %+v", httpErr.Message)
 		w.WriteHeader(httpErr.Code)
+		return
 	}
 
 	requestType, httpErr := parseRequestType(r.URL.Query())
@@ -218,6 +230,7 @@ func handleGetUsers(w http.ResponseWriter, r *http.Request) {
 	if httpErr != nil {
 		log.Printf("[ERR] GET /users: %+v", httpErr.Message)
 		w.WriteHeader(httpErr.Code)
+		return
 	}
 
 	users, err := database.GetUsers(clientType)
@@ -246,11 +259,13 @@ func handleNotificationsTrigger(w http.ResponseWriter, r *http.Request) {
 	if httpErr != nil {
 		log.Printf("[ERR] GET /notifications/trigger: %+v", httpErr.Message)
 		w.WriteHeader(httpErr.Code)
+		return
 	}
 	clientID, httpErr := parseQueryParameter(r.URL.Query(), "client-id")
 	if httpErr != nil {
 		log.Printf("[ERR] GET /notifications/trigger: %+v", httpErr.Message)
 		w.WriteHeader(httpErr.Code)
+		return
 	}
 	notifier.NotifyUser(clientType, structs.UserNotification{
 		UserID: clientID,
