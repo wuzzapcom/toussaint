@@ -5,27 +5,20 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"net/url"
-	"time"
 	"toussaint/backend/structs"
 
 	"github.com/gorilla/mux"
 )
 
+var notifier = NewNotifier()
+
 var database = NewDatabase()
 
 func handleSearch(w http.ResponseWriter, r *http.Request) {
-	name := r.URL.Query().Get("name")
-	if name == "" {
-		w.WriteHeader(http.StatusNotAcceptable)
-		return
-	}
-
-	name, err := url.QueryUnescape(name)
-	if err != nil {
-		log.Printf("[ERR] GET /search: %+v", err)
-		w.WriteHeader(http.StatusBadRequest)
-		return
+	name, httpErr := parseQueryParameter(r.URL.Query(), "name")
+	if httpErr != nil {
+		log.Printf("[ERR] GET /search: %+v", httpErr.Message)
+		w.WriteHeader(httpErr.Code)
 	}
 
 	searched, err := SearchByName(name)
@@ -56,29 +49,22 @@ func handleSearch(w http.ResponseWriter, r *http.Request) {
 	w.Write(marshalled)
 }
 
-func handleGetGame(w http.ResponseWriter, r *http.Request) {
-	name := r.URL.Query().Get("name")
-	if name == "" {
-		w.WriteHeader(http.StatusNotAcceptable)
-		return
-	}
-
-	name, err := url.QueryUnescape(name)
-	if err != nil {
-		log.Printf("[ERR] GET /game: %+v", err)
-		w.WriteHeader(http.StatusBadRequest)
-		return
+func handleGetGames(w http.ResponseWriter, r *http.Request) {
+	name, httpErr := parseQueryParameter(r.URL.Query(), "name")
+	if httpErr != nil {
+		log.Printf("[ERR] PUT /games: %+v", httpErr.Message)
+		w.WriteHeader(httpErr.Code)
 	}
 
 	id, err := database.GetIDByGameName(name)
 	if err != nil {
-		log.Printf("[ERR] GET /game: %+v", err)
+		log.Printf("[ERR] GET /games: %+v", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	if id == "" {
-		log.Printf("[ERR] GET /game: game not found")
+		log.Printf("[ERR] GET /games: game not found")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -86,51 +72,30 @@ func handleGetGame(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(id))
 }
 
-func handlePutRegister(w http.ResponseWriter, r *http.Request) {
-	clientId := r.URL.Query().Get("client-id")
-	if clientId == "" {
-		w.WriteHeader(http.StatusNotAcceptable)
-		return
+func handlePutUsers(w http.ResponseWriter, r *http.Request) {
+	clientID, httpErr := parseQueryParameter(r.URL.Query(), "client-id")
+	if httpErr != nil {
+		log.Printf("[ERR] PUT /users: %+v", httpErr.Message)
+		w.WriteHeader(httpErr.Code)
 	}
 
-	clientId, err := url.QueryUnescape(clientId)
-	if err != nil {
-		log.Printf("[ERR] PUT /register: %+v", err)
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	clientTypeStr := r.URL.Query().Get("client-type")
-	if clientTypeStr == "" {
-		w.WriteHeader(http.StatusNotAcceptable)
-		return
-	}
-
-	clientTypeStr, err = url.QueryUnescape(clientTypeStr)
-	if err != nil {
-		log.Printf("[ERR] PUT /register: %+v", err)
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	clientType, err := GetClientType(clientTypeStr)
-	if err != nil {
-		log.Printf("[ERR] PUT /register GetClientType: %+v", err)
-		w.WriteHeader(http.StatusNotAcceptable)
-		return
+	clientType, httpErr := parseClientType(r.URL.Query())
+	if httpErr != nil {
+		log.Printf("[ERR] PUT /users: %+v", httpErr.Message)
+		w.WriteHeader(httpErr.Code)
 	}
 
 	var client Client
 	switch clientType {
 	case Telegram:
-		client = NewTelegramClient(clientId)
+		client = NewTelegramClient(clientID)
 	default:
 		log.Printf("[ERR] PUT /register: unhandled client type %+v", clientType)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	err = database.AddUser(client)
+	err := database.AddUser(client)
 	if err != nil {
 		log.Printf("[ERR] PUT /register AddUser: %+v", err)
 		w.WriteHeader(http.StatusConflict)
@@ -140,58 +105,30 @@ func handlePutRegister(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
-func handlePutNotify(w http.ResponseWriter, r *http.Request) {
+func handlePutNotifications(w http.ResponseWriter, r *http.Request) {
 
-	clientId := r.URL.Query().Get("client-id")
-	if clientId == "" {
-		w.WriteHeader(http.StatusNotAcceptable)
-		return
+	clientID, httpErr := parseQueryParameter(r.URL.Query(), "client-id")
+	if httpErr != nil {
+		log.Printf("[ERR] PUT /notifications: %+v", httpErr.Message)
+		w.WriteHeader(httpErr.Code)
 	}
 
-	clientId, err := url.QueryUnescape(clientId)
-	if err != nil {
-		log.Printf("[ERR] PUT /notify: %+v", err)
-		w.WriteHeader(http.StatusBadRequest)
-		return
+	clientType, httpErr := parseClientType(r.URL.Query())
+	if httpErr != nil {
+		log.Printf("[ERR] PUT /notifications: %+v", httpErr.Message)
+		w.WriteHeader(httpErr.Code)
 	}
 
-	clientTypeStr := r.URL.Query().Get("client-type")
-	if clientTypeStr == "" {
-		w.WriteHeader(http.StatusNotAcceptable)
-		return
+	gameID, httpErr := parseQueryParameter(r.URL.Query(), "game-id")
+	if httpErr != nil {
+		log.Printf("[ERR] PUT /notifications: %+v", httpErr.Message)
+		w.WriteHeader(httpErr.Code)
 	}
 
-	clientTypeStr, err = url.QueryUnescape(clientTypeStr)
-	if err != nil {
-		log.Printf("[ERR] PUT /notify: %+v", err)
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	clientType, err := GetClientType(clientTypeStr)
-	if err != nil {
-		log.Printf("[ERR] PUT /notify GetClientType: %+v", err)
-		w.WriteHeader(http.StatusNotAcceptable)
-		return
-	}
-
-	gameId := r.URL.Query().Get("game-id")
-	if gameId == "" {
-		w.WriteHeader(http.StatusNotAcceptable)
-		return
-	}
-
-	gameId, err = url.QueryUnescape(gameId)
-	if err != nil {
-		log.Printf("[ERR] PUT /notify: %+v", err)
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	game, err := SearchByID(gameId)
+	game, err := SearchByID(gameID)
 	if err != nil {
 		if err != nil {
-			log.Printf("[ERR] PUT /notify GetClientType: %+v", err)
+			log.Printf("[ERR] PUT /notifications GetClientType: %+v", err)
 			w.WriteHeader(http.StatusNotAcceptable)
 			return
 		}
@@ -199,14 +136,14 @@ func handlePutNotify(w http.ResponseWriter, r *http.Request) {
 
 	err = database.AddGame(game)
 	if err != nil {
-		log.Printf("[ERR] PUT /notify AddGame: %+v", err)
+		log.Printf("[ERR] PUT /notifications AddGame: %+v", err)
 		w.WriteHeader(http.StatusNotAcceptable)
 		return
 	}
 
-	err = database.AddGameToUser(game.Id, clientId, clientType)
+	err = database.AddGameToUser(game.Id, clientID, clientType)
 	if err != nil {
-		log.Printf("[ERR] PUT /notify AddGameToUser: %+v", err)
+		log.Printf("[ERR] PUT /notifications AddGameToUser: %+v", err)
 		w.WriteHeader(http.StatusNotAcceptable)
 		return
 	}
@@ -214,55 +151,27 @@ func handlePutNotify(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
-func handleDeleteNotify(w http.ResponseWriter, r *http.Request) {
+func handleDeleteNotifications(w http.ResponseWriter, r *http.Request) {
 
-	gameId := r.URL.Query().Get("game-id")
-	if gameId == "" {
-		w.WriteHeader(http.StatusNotAcceptable)
-		return
+	gameID, httpErr := parseQueryParameter(r.URL.Query(), "game-id")
+	if httpErr != nil {
+		log.Printf("[ERR] DELETE /notifications: %+v", httpErr.Message)
+		w.WriteHeader(httpErr.Code)
 	}
 
-	gameId, err := url.QueryUnescape(gameId)
-	if err != nil {
-		log.Printf("[ERR] DELETE /notify: %+v", err)
-		w.WriteHeader(http.StatusBadRequest)
-		return
+	clientID, httpErr := parseQueryParameter(r.URL.Query(), "client-id")
+	if httpErr != nil {
+		log.Printf("[ERR] DELETE /notifications: %+v", httpErr.Message)
+		w.WriteHeader(httpErr.Code)
 	}
 
-	clientId := r.URL.Query().Get("client-id")
-	if clientId == "" {
-		w.WriteHeader(http.StatusNotAcceptable)
-		return
+	clientType, httpErr := parseClientType(r.URL.Query())
+	if httpErr != nil {
+		log.Printf("[ERR] DELETE /notifications: %+v", httpErr.Message)
+		w.WriteHeader(httpErr.Code)
 	}
 
-	clientId, err = url.QueryUnescape(clientId)
-	if err != nil {
-		log.Printf("[ERR] DELETE /notify: %+v", err)
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	clientTypeStr := r.URL.Query().Get("client-type")
-	if clientTypeStr == "" {
-		w.WriteHeader(http.StatusNotAcceptable)
-		return
-	}
-
-	clientTypeStr, err = url.QueryUnescape(clientTypeStr)
-	if err != nil {
-		log.Printf("[ERR] DELETE /notify: %+v", err)
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	clientType, err := GetClientType(clientTypeStr)
-	if err != nil {
-		log.Printf("[ERR] DELETE /notify GetClientType: %+v", err)
-		w.WriteHeader(http.StatusNotAcceptable)
-		return
-	}
-
-	err = database.DeleteGameFromUser(gameId, clientId, clientType)
+	err := database.DeleteGameFromUser(gameID, clientID, clientType)
 	if err != nil {
 		log.Printf("[ERR] DELETE /notify DeleteGameFromUser: %+v", err)
 		w.WriteHeader(http.StatusNotAcceptable)
@@ -274,60 +183,25 @@ func handleDeleteNotify(w http.ResponseWriter, r *http.Request) {
 
 func handleGetList(w http.ResponseWriter, r *http.Request) {
 
-	clientId := r.URL.Query().Get("client-id")
-	if clientId == "" {
-		w.WriteHeader(http.StatusNotAcceptable)
-		return
+	clientID, httpErr := parseQueryParameter(r.URL.Query(), "client-id")
+	if httpErr != nil {
+		log.Printf("[ERR] GET /list %+v", httpErr.Message)
+		w.WriteHeader(httpErr.Code)
 	}
 
-	clientId, err := url.QueryUnescape(clientId)
-	if err != nil {
-		log.Printf("[ERR] GET /list: %+v", err)
-		w.WriteHeader(http.StatusBadRequest)
-		return
+	clientType, httpErr := parseClientType(r.URL.Query())
+	if httpErr != nil {
+		log.Printf("[ERR] GET /list: %+v", httpErr.Message)
+		w.WriteHeader(httpErr.Code)
 	}
 
-	clientTypeStr := r.URL.Query().Get("client-type")
-	if clientTypeStr == "" {
-		w.WriteHeader(http.StatusNotAcceptable)
-		return
+	requestType, httpErr := parseRequestType(r.URL.Query())
+	if httpErr != nil {
+		log.Printf("[ERR] GET /list: %+v", httpErr.Message)
+		w.WriteHeader(httpErr.Code)
 	}
 
-	clientTypeStr, err = url.QueryUnescape(clientTypeStr)
-	if err != nil {
-		log.Printf("[ERR] GET /list: %+v", err)
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	clientType, err := GetClientType(clientTypeStr)
-	if err != nil {
-		log.Printf("[ERR] GET /list GetClientType: %+v", err)
-		w.WriteHeader(http.StatusNotAcceptable)
-		return
-	}
-
-	requestTypeStr := r.URL.Query().Get("request-type")
-	if requestTypeStr == "" {
-		w.WriteHeader(http.StatusNotAcceptable)
-		return
-	}
-
-	requestTypeStr, err = url.QueryUnescape(requestTypeStr)
-	if err != nil {
-		log.Printf("[ERR] GET /list: %+v", err)
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	requestType, err := GetRequestType(requestTypeStr)
-	if err != nil {
-		log.Printf("[ERR] GET /list GetRequestType: %+v", err)
-		w.WriteHeader(http.StatusNotAcceptable)
-		return
-	}
-
-	games, err := database.GetGamesForUser(clientId, clientType, requestType)
+	games, err := database.GetGamesForUser(clientID, clientType, requestType)
 	if err != nil {
 		log.Printf("[ERR] GET /list GetGamesForUser: %+v", err)
 		w.WriteHeader(http.StatusNotAcceptable)
@@ -340,24 +214,10 @@ func handleGetList(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleGetUsers(w http.ResponseWriter, r *http.Request) {
-	clientTypeStr := r.URL.Query().Get("client-type")
-	if clientTypeStr == "" {
-		w.WriteHeader(http.StatusNotAcceptable)
-		return
-	}
-
-	clientTypeStr, err := url.QueryUnescape(clientTypeStr)
-	if err != nil {
-		log.Printf("[ERR] GET /users: %+v", err)
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	clientType, err := GetClientType(clientTypeStr)
-	if err != nil {
-		log.Printf("[ERR] GET /users GetClientType: %+v", err)
-		w.WriteHeader(http.StatusNotAcceptable)
-		return
+	clientType, httpErr := parseClientType(r.URL.Query())
+	if httpErr != nil {
+		log.Printf("[ERR] GET /users: %+v", httpErr.Message)
+		w.WriteHeader(httpErr.Code)
 	}
 
 	users, err := database.GetUsers(clientType)
@@ -381,23 +241,51 @@ func handleGetUsers(w http.ResponseWriter, r *http.Request) {
 	w.Write(marshalled)
 }
 
-func SetupRestApi(host string, port int) *http.Server {
+func handleNotificationsTrigger(w http.ResponseWriter, r *http.Request) {
+	clientType, httpErr := parseClientType(r.URL.Query())
+	if httpErr != nil {
+		log.Printf("[ERR] GET /notifications/trigger: %+v", httpErr.Message)
+		w.WriteHeader(httpErr.Code)
+	}
+	clientID, httpErr := parseQueryParameter(r.URL.Query(), "client-id")
+	if httpErr != nil {
+		log.Printf("[ERR] GET /notifications/trigger: %+v", httpErr.Message)
+		w.WriteHeader(httpErr.Code)
+	}
+	notifier.NotifyUser(clientType, structs.UserNotification{
+		UserID: clientID,
+		Games: structs.GamesJSON{
+			Games: []structs.GamePair{
+				structs.GamePair{
+					Id:          "test_game",
+					Description: "test_game",
+				},
+			},
+		},
+	})
+	w.WriteHeader(http.StatusOK)
+}
+
+func SetupRestAPI(host string, port int, debug bool) *http.Server {
 	router := mux.NewRouter()
 
 	router.HandleFunc("/v1/search", handleSearch).Methods("GET")
-	router.HandleFunc("/v1/game", handleGetGame).Methods("GET")
-	router.HandleFunc("/v1/register", handlePutRegister).Methods("PUT")
-	router.HandleFunc("/v1/notify", handlePutNotify).Methods("PUT")
-	router.HandleFunc("/v1/notify", handleDeleteNotify).Methods("DELETE")
+	router.HandleFunc("/v1/games", handleGetGames).Methods("GET")
+	router.HandleFunc("/v1/notifications", handlePutNotifications).Methods("PUT")
+	router.HandleFunc("/v1/notifications", handleDeleteNotifications).Methods("DELETE")
+	router.HandleFunc("/v1/notifications", notifier.ServeHTTP).Methods("GET")
 	router.HandleFunc("/v1/list", handleGetList).Methods("GET")
 	router.HandleFunc("/v1/users", handleGetUsers).Methods("GET")
+	router.HandleFunc("/v1/users", handlePutUsers).Methods("PUT")
+
+	if debug {
+		log.Printf("setting GET /v1/notifications/trigger ...")
+		router.HandleFunc("/v1/notifications/trigger", handleNotificationsTrigger).Methods("GET")
+	}
 
 	srv := &http.Server{
 		Handler: router,
 		Addr:    fmt.Sprintf("%s:%d", host, port),
-		// Good practice: enforce timeouts for servers you create!
-		WriteTimeout: 15 * time.Second,
-		ReadTimeout:  15 * time.Second,
 	}
 
 	return srv

@@ -1,61 +1,20 @@
 package app
 
 import (
-	"encoding/json"
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"toussaint/backend/structs"
+
+	"github.com/stretchr/testify/assert"
 )
 
-//func TestGetGame1(t *testing.T) {
-//	srv := SetupRestApi("", 9999)
-//	srv.ListenAndServe()
-//	//go srv.ListenAndServe()
-//	//defer srv.Shutdown(nil)
-//	//
-//	//resp, err := http.Get("http://localhost:9999/games?name=battlefield")
-//	//assert.Nil(t, err)
-//	//assert.Equal(t, http.StatusOK, resp.StatusCode)
-//	//
-//	//var games []Game
-//	//body, err := ioutil.ReadAll(resp.Body)
-//	//assert.Nil(t, err)
-//	//
-//	//err = json.Unmarshal(body, games)
-//	//assert.Nil(t, err)
-//	//
-//	//t.Log(games)
-//}
-
-func TestGetGame2(t *testing.T) {
+func TestGetGame(t *testing.T) {
 
 	defer removeDB(t)
 
-	srv := httptest.NewServer(http.HandlerFunc(handleGetGame))
-
-	resp, err := http.Get(fmt.Sprintf("%s%s", srv.URL, "/games?name=battlefield"))
-	assert.Nil(t, err)
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-
-	var games structs.GamesJSON
-	body, err := ioutil.ReadAll(resp.Body)
-	assert.Nil(t, err)
-
-	err = json.Unmarshal(body, &games)
-	assert.Nil(t, err)
-
-	t.Log(games)
-}
-
-func TestGetGame3(t *testing.T) {
-
-	defer removeDB(t)
-
-	srv := httptest.NewServer(http.HandlerFunc(handleGetGame))
+	srv := httptest.NewServer(http.HandlerFunc(handleGetGames))
 
 	resp, err := http.Get(fmt.Sprintf("%s%s", srv.URL, "/games?name="))
 	assert.Nil(t, err)
@@ -74,7 +33,7 @@ func TestPutRegister1(t *testing.T) {
 }
 
 func registerUser(t *testing.T, expectedCode int) {
-	srv := httptest.NewServer(http.HandlerFunc(handlePutRegister))
+	srv := httptest.NewServer(http.HandlerFunc(handlePutUsers))
 
 	client := http.Client{}
 	req, err := http.NewRequest("PUT", fmt.Sprintf("%s%s", srv.URL, "/register?client-id=1&client-type=telegram"), nil)
@@ -99,7 +58,7 @@ func TestPutNotify1(t *testing.T) {
 
 func putNotify(t *testing.T, expectedStatus int, gameId string) {
 
-	srv := httptest.NewServer(http.HandlerFunc(handlePutNotify))
+	srv := httptest.NewServer(http.HandlerFunc(handlePutNotifications))
 
 	client := http.Client{}
 	req, err := http.NewRequest("PUT",
@@ -119,7 +78,7 @@ func TestDeleteNotify1(t *testing.T) {
 
 	defer removeDB(t)
 
-	srv := httptest.NewServer(http.HandlerFunc(handleDeleteNotify))
+	srv := httptest.NewServer(http.HandlerFunc(handleDeleteNotifications))
 
 	gameId := "EP9000-CUSA11995_00-MARVELSSPIDERMAN"
 

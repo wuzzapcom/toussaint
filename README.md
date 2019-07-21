@@ -12,7 +12,7 @@ We should prepare file with telegram token. Ensure that you in toussaint directo
 Create file with secret:
 
 ```
-vim docker/telegram/telegram-token
+vim docker/telegram/telegram.token
 ```
 
 Build and run:

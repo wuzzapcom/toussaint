@@ -11,7 +11,7 @@ import (
 	"strings"
 	"toussaint/backend/structs"
 
-	"github.com/go-telegram-bot-api/telegram-bot-api"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
 //APIEndpoint should be set in main
@@ -48,7 +48,7 @@ func handleNoState(message *tgbotapi.Message, payload interface{}) (string, bool
 	}
 	switch command {
 	case "/start":
-		resp, err := performRequest("PUT", fmt.Sprintf("/register?client-id=%d&client-type=telegram", message.From.ID), nil)
+		resp, err := performRequest("PUT", fmt.Sprintf("/users?client-id=%d&client-type=telegram", message.From.ID), nil)
 		if err != nil {
 			return register_fail_msg_ru, false, NO_STATE, nil, err
 		}
@@ -99,19 +99,13 @@ func handleNoState(message *tgbotapi.Message, payload interface{}) (string, bool
 		if err != nil {
 			return get_game_fail_msg_ru, false, NO_STATE, nil, err
 		}
-		ids := make([]string, len(games.Games))
-		var descs string
-		for i, game := range games.Games {
-			ids[i] = game.Id
-			descs += fmt.Sprintf("%d) %s\n", i+1, game.Description)
-		}
-		descs += fmt.Sprintf("%d) %s", len(games.Games)+1, cancel_search_msg_ru)
+		ids, descs := FormatGamesListMessage(games)
 		return descs, true, SEARCH_GAME_WAIT_GAME, ids, nil
 	case "/delete":
 		if len(msg) == 0 {
 			return delete_expected_game_name_msg_ru, false, NO_STATE, nil, nil
 		}
-		resp, err := performRequest("GET", fmt.Sprintf("/game?name=%s", url.QueryEscape(msg)), nil)
+		resp, err := performRequest("GET", fmt.Sprintf("/games?name=%s", url.QueryEscape(msg)), nil)
 		if err != nil {
 			return get_game_fail_msg_ru, false, NO_STATE, nil, err
 		}
@@ -122,7 +116,7 @@ func handleNoState(message *tgbotapi.Message, payload interface{}) (string, bool
 
 		resp, err = performRequest(
 			"DELETE",
-			fmt.Sprintf("/notify?client-id=%d&client-type=telegram&game-id=%s", message.From.ID, url.QueryEscape(string(id))),
+			fmt.Sprintf("/notifications?client-id=%d&client-type=telegram&game-id=%s", message.From.ID, url.QueryEscape(string(id))),
 			nil,
 		)
 
@@ -132,6 +126,16 @@ func handleNoState(message *tgbotapi.Message, payload interface{}) (string, bool
 		return delete_notify_ok_msg_ru, false, NO_STATE, nil, nil
 	case "/help":
 		return help_msg_ru, false, NO_STATE, nil, nil
+	case "/debug":
+		response := "testing notifications..."
+		resp, err := performRequest("GET", fmt.Sprintf("/notifications/trigger?client-type=telegram&client-id=%d", message.From.ID), nil)
+		if err != nil {
+			response = fmt.Sprintf("error during testing request: %+v", err)
+		}
+		if resp.StatusCode != 200 {
+			response = "status code != 200"
+		}
+		return response, false, NO_STATE, nil, nil
 	default:
 		return unimplemented_msg_ru, false, NO_STATE, nil, nil
 	}
@@ -151,13 +155,14 @@ func handleSearchGameWaitGame(message *tgbotapi.Message, payload interface{}) (s
 		return get_game_number_fail_msg_ru, false, NO_STATE, nil, fmt.Errorf("id great than array size")
 	}
 
-	if num  == len(ids) + 1 {
+	if num == len(ids)+1 {
 		return cancelled_ok_msg_ru, false, NO_STATE, nil, nil
 	}
 
+	fmt.Printf("wtf id is %d", num)
 	resp, err := performRequest(
 		"PUT",
-		fmt.Sprintf("/notify?client-id=%d&client-type=telegram&game-id=%s", message.From.ID, ids[num-1]),
+		fmt.Sprintf("/notifications?client-id=%d&client-type=telegram&game-id=%s", message.From.ID, ids[num-1]),
 		nil,
 	)
 
@@ -175,4 +180,15 @@ func performRequest(method string, url string, body io.Reader) (*http.Response, 
 	}
 
 	return cl.Do(req)
+}
+
+func FormatGamesListMessage(games structs.GamesJSON) ([]string, string) {
+	ids := make([]string, len(games.Games))
+	var descs string
+	for i, game := range games.Games {
+		ids[i] = game.Id
+		descs += fmt.Sprintf("%d) %s\n", i+1, game.Description)
+	}
+	descs += fmt.Sprintf("%d) %s", len(games.Games)+1, cancel_search_msg_ru)
+	return ids, descs
 }

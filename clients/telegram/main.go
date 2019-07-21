@@ -22,9 +22,14 @@ func main() {
 
 	tg, err := app.NewTelegram(params.TelegramBotToken, params.Debug)
 	if err != nil {
-		fmt.Printf("[ERR] Failed initialization of telegram bot: %+v", err)
+		fmt.Printf("[ERR] Failed initialization of telegram bot: %+v\n", err)
 		os.Exit(-1)
 	}
 
-	tg.Start()
+	err = tg.Start()
+	if err != nil {
+		fmt.Printf("[ERR] Failed to starg telegram bot: %+v\n", err)
+		os.Exit(-1)
+	}
+
 }

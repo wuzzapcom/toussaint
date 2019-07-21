@@ -87,11 +87,11 @@ func (c *Context) HandleMessage(message *tgbotapi.Message) (string, bool, error)
 
 func validator(stopValidator chan bool) {
 	ticker := time.Tick(frequency)
-	log.Printf("[INF] Start validator")
+	log.Printf("start validator")
 	for {
 		select {
 		case <-ticker:
-			log.Printf("[INF] Validation ...")
+			log.Printf("validation ...")
 			current := time.Now()
 			for key, value := range shared.cache {
 				if current.Sub(value.updatedAt) > delay {
@@ -99,7 +99,7 @@ func validator(stopValidator chan bool) {
 				}
 			}
 		case <-stopValidator:
-			log.Printf("[INF] Stop validator")
+			log.Printf("stop validator")
 		}
 	}
 }

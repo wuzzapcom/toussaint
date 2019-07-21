@@ -1,7 +1,7 @@
 swagger: "2.0"
 info:
   description: "API for Toussaint backend. Used for subscribing to games"
-  version: "0.0.1"
+  version: "0.9.0"
   title: "Toussaint backend"
   contact:
     email: "wuzzapcom@gmail.com"
@@ -32,7 +32,7 @@ paths:
           schema:
             items:
               $ref: "#/definitions/Games"
-  /game:
+  /games:
     get:
       operationId: "get_game"
       description: "Get game ID by name"
@@ -51,7 +51,26 @@ paths:
           description: "successful operation"
           schema:
             type: "string"
-  /notify:
+  /notifications:
+    get:
+      consumes:
+        - "application/json" 
+      description: "Method implementing PULL model: client established connection which is opened until client stops. 
+      When notification appears it will immidiately send to client using this connection. This approach simplifies clients since
+      they not have to check backend for notifications: server will send them as soon as possible."
+      parameters:
+        - name: "client-type"
+          in: "query"
+          description: "type of client"
+          required: true
+          type: "string"
+          enum:
+            - "telegram"
+      responses:
+        200:
+          description: connection established
+          schema:
+            $ref: "#/definitions/Notification"
     put:
       operationId: "put_notify"
       consumes:
@@ -106,10 +125,43 @@ paths:
           description: "successful deletion"
         406:
           description: "Invalid input"
-
-  /register:
+  /notifications/trigger:
+    get:
+      description: DEBUG MODE ONLY METHOD; triggers notification to target user
+      parameters:
+        - name: "client-id"
+          in: "query"
+          description: "id of client"
+          required: true
+          type: "string"
+        - name: "client-type"
+          in: "query"
+          description: "type of client"
+          required: true
+          type: "string"
+          enum:
+            - "telegram"
+      responses:
+        200:
+          description: successful operation
+  /users:
+    get:
+      operationId: "get_users"
+      description: "Get all users for single client-type"
+      parameters:
+        - name: "client-type"
+          in: "query"
+          description: "type of client"
+          required: true
+          type: "string"
+          enum:
+            - "telegram"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Users"
     put:
-      operationId: "put_register"
       description: "Registers new user"
       parameters:
         - name: "client-id"
@@ -129,27 +181,6 @@ paths:
           description: "successful operation"
         409:
           description: "conflict"
-
-  /users:
-    get:
-      operationId: "get_users"
-      description: "Get all users for single client-type"
-      parameters:
-        - name: "client-type"
-          in: "query"
-          description: "type of client"
-          required: true
-          type: "string"
-          enum:
-            - "telegram"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              type: "string"
-            # json Users with field Ids []string
   /list:
     get:
       operationId: "get_list"
@@ -186,7 +217,7 @@ definitions:
   Games:
     type: "array"
     items:
-      $ref: '#/definitions/Game'
+      $ref: "#/definitions/Game"
   Game:
     type: "object"
     required:
@@ -197,3 +228,20 @@ definitions:
         type: "string"
       description:
         type: "string"
+  Users:
+    type: object
+    required: 
+      - ids
+    properties:
+      ids:
+        type: string
+  Notification:
+    type: object
+    required:
+      - "games"
+      - "userID"
+    properties:
+      games:
+        $ref: "#/definitions/Game"
+      userID:
+        type: string

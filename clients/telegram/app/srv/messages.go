@@ -19,3 +19,4 @@ const delete_notify_fail_msg_ru = "Удаление не удалось, поп�
 const delete_notify_ok_msg_ru = "Успешно удалено!"
 const cancel_search_msg_ru = "Отменить"
 const cancelled_ok_msg_ru = "Отменено."
+const New_sales_msg_ru = "Подоспели новые скидочки:"

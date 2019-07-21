@@ -12,3 +12,8 @@ type GamePair struct {
 type UsersJSON struct {
 	Ids []string `json:"ids"`
 }
+
+type UserNotification struct {
+	Games  GamesJSON `json:"games"`
+	UserID string    `json:"userId"`
+}
